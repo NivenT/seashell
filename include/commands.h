@@ -1,7 +1,11 @@
 #ifndef COMMANDS_H_INCLUDED
 #define COMMANDS_H_INCLUDED
 
+#include <sys/types.h>
+
 #include "defs.h"
+
+typedef struct command command;
 
 struct command {
   char name[MAX_CMD_NAME_LEN];
