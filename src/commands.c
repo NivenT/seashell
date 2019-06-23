@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include <stdio.h>
 
@@ -50,6 +51,17 @@ bool parse_command(const char* line, struct command* cmd) {
   return true;
 }
 
-bool run_command(const struct command cmd) {
+bool run_command(const struct command cmd, pid_t* pid) {
+  *pid = fork();
+  if (*pid == 0) {
+    char* argv[MAX_NUM_ARGS + 2];
+    argv[0] = &cmd.name[0];
+    memcpy(&argv[1], cmd.args, MAX_NUM_ARGS);
+    argv[MAX_NUM_ARGS+1] = 0;
+
+    execvp(argv[0], argv);
+    strcpy(error_msg, "Command not found");
+    return false;
+  }
   return true;
 }

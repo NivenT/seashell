@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,23 +38,28 @@ int main(int argc, char *argv[]) {
   pid_t seashell_pid = getpid();
 
   char line[MAX_CMD_LEN];
-  bool error = false;
   while (true) {
-    error = false;
-
-    CHECK_ERROR(error, read_line(line));
     struct command cmd;
-    CHECK_ERROR(error, parse_command(line, &cmd));
-    CHECK_ERROR(error, run_command(cmd));
+    pid_t child_pid = 0;
+    bool error = false;
+    
+    CHECK_ERROR(error, read_line(line));
+    if (line[0] != '\0') {
+      CHECK_ERROR(error, parse_command(line, &cmd));
+      CHECK_ERROR(error, run_command(cmd, &child_pid));
+    } else continue;
     
     if (!error) {
-      //printf("%s (%ld)\n", line, strlen(line));
+      if (child_pid != 0) waitpid(child_pid, NULL, 0);
+      
+      /*
       printf("%s", cmd.name);
       for (int i = 0; i < MAX_NUM_ARGS; i++) {
 	if (cmd.args[i] == NULL) break;
 	printf(" '%s'", cmd.args[i]);
       }
-      printf("\n");
+      printf(" (PID: %d)\n", child_pid);
+      */
     } else {
       printf("ERROR: %s\n", error_msg);
     }

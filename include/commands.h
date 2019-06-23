@@ -9,6 +9,6 @@ struct command {
 };
 
 extern bool parse_command(const char* line, struct command* cmd);
-extern bool run_command(const struct command cmd);
+extern bool run_command(const struct command cmd, pid_t* pid);
 
 #endif // COMMANDS_H_INCLUDED
