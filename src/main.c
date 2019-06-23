@@ -5,8 +5,9 @@
 #include <string.h>
 
 #include "utils.h"
+#include "commands.h"
 
-#define CHECK_ERROR(err, cmd) if (!err) { err = cmd; }
+#define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 char error_msg[MAX_ERR_LEN] = {0};
 
@@ -14,7 +15,7 @@ bool read_line(char* line) {
   printf(PROMPT);
   if (fgets(line, MAX_CMD_LEN, stdin) == NULL) {
     strcpy(error_msg, "Could not read user input (fgets returned NULL)");
-    return true;
+    return false;
   }
   bool succ = ends_with(line, "\n");
   if (succ) {
@@ -29,7 +30,7 @@ bool read_line(char* line) {
     sprintf(error_msg, "User input was too long; it was %d chars, but only %d chars allowed",
 	    len, MAX_CMD_LEN-1);
   }
-  return !succ;
+  return succ;
 }
 
 int main(int argc, char *argv[]) {
@@ -41,9 +42,18 @@ int main(int argc, char *argv[]) {
     error = false;
 
     CHECK_ERROR(error, read_line(line));
-
+    struct command cmd;
+    CHECK_ERROR(error, parse_command(line, &cmd));
+    CHECK_ERROR(error, run_command(cmd));
+    
     if (!error) {
-      printf("%s (%ld)\n", line, strlen(line));
+      //printf("%s (%ld)\n", line, strlen(line));
+      printf("%s", cmd.name);
+      for (int i = 0; i < MAX_NUM_ARGS; i++) {
+	if (cmd.args[i] == NULL) break;
+	printf(" '%s'", cmd.args[i]);
+      }
+      printf("\n");
     } else {
       printf("ERROR: %s\n", error_msg);
     }
