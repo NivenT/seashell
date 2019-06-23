@@ -36,14 +36,14 @@ bool read_line(char* line) {
 
 int main(int argc, char *argv[]) {
   pid_t seashell_pid = getpid();
-
-  char line[MAX_CMD_LEN];
-  struct command cmd;
-  pid_t child_pid = 0;
-  bool error = false;
-  bool is_builtin = false;
-    
+  
   while (true) {
+    char line[MAX_CMD_LEN];
+    command cmd = {{0}, {0}};
+    pid_t child_pid = 0;
+    bool error = false;
+    bool is_builtin = false;  
+    
     CHECK_ERROR(error, read_line(line));
     if (line[0] != '\0') {
       CHECK_ERROR(error, parse_command(line, &cmd));
@@ -60,7 +60,5 @@ int main(int argc, char *argv[]) {
       if (getpid() != seashell_pid) exit(0);
     }
   }
-
-  printf("Exiting seashell\n");
   return 0;
 }

@@ -19,6 +19,12 @@ bool read_word(const char* str, const char** start, const char** end) {
   return true;
 }
 
+int num_args(const command cmd) {
+  int cnt = 0;
+  while (cnt < MAX_NUM_ARGS && cmd.args[cnt]) cnt++;
+  return cnt;
+}
+
 bool parse_command(const char* line, struct command* cmd) {
   const char *start = line, *end = 0;
   bool succ = read_word(line, &start, &end);

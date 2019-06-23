@@ -12,7 +12,9 @@ struct command {
   char* args[MAX_NUM_ARGS];
 };
 
-extern bool parse_command(const char* line, struct command* cmd);
-extern bool run_command(const struct command cmd, pid_t* pid);
+extern int num_args(const command cmd);
+
+extern bool parse_command(const char* line, command* cmd);
+extern bool run_command(const command cmd, pid_t* pid);
 
 #endif // COMMANDS_H_INCLUDED
