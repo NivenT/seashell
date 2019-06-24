@@ -3,10 +3,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <getopt.h>
 
 #include "builtins.h"
+#include "utils.h"
 
-const char* builtins[] = {"exit", "quit", "cd", ""};
+const char* builtins[] = {"exit", "quit", "cd", "bookmark", ""};
 
 bool cd(const command cmd) {
   if (num_args(cmd) != 1) {
@@ -27,6 +29,38 @@ bool cd(const command cmd) {
   return false;
 }
 
+bool bookmark(const command cmd) {
+  static const struct option options[] =
+    {
+     {"save", required_argument, NULL, 's'},
+     {"name", required_argument, NULL, 'n'},
+     {"goto", required_argument, NULL, 'g'},
+     {"list", no_argument, NULL, 'l'}
+    };
+
+  char* argv[MAX_NUM_ARGS+2];
+  command_to_argv(cmd, argv);
+  int argc = num_args(cmd) + 1;
+
+  opterr = 0;
+  optind = 1;
+  while(true) {
+    int prev_optind = optind;
+    
+    char c = getopt_long(argc, argv, "s:n:g:l", options, NULL);
+    if (c == -1) break;
+    if (c == '?') continue;
+
+    switch(c) {
+    case 's': NOT_IMPLEMENTED("bookmark --save"); break;
+    case 'n': NOT_IMPLEMENTED("bookmark --name"); break;
+    case 'g': NOT_IMPLEMENTED("bookmark --goto"); break;
+    case 'l': NOT_IMPLEMENTED("bookmark --list"); break;
+    }
+  }
+  return true;
+}
+
 bool handle_builtin(const command cmd, bool* is_builtin) {
   int idx = -1;
   for (int i = 0; builtins[i]; i++) {
@@ -40,6 +74,7 @@ bool handle_builtin(const command cmd, bool* is_builtin) {
   switch(idx) {
   case 0: case 1: exit(0); break;
   case 2: return cd(cmd); break;
+  case 3: return bookmark(cmd); break;
   default: *is_builtin = false; break;
   }
   

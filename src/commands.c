@@ -25,7 +25,7 @@ int num_args(const command cmd) {
   return cnt;
 }
 
-bool parse_command(const char* line, struct command* cmd) {
+bool parse_command(const char* line, command* cmd) {
   const char *start = line, *end = 0;
   bool succ = read_word(line, &start, &end);
   if (!succ) {
@@ -57,17 +57,21 @@ bool parse_command(const char* line, struct command* cmd) {
   return true;
 }
 
-bool run_command(const struct command cmd, pid_t* pid) {
+bool run_command(const command cmd, pid_t* pid) {
   *pid = fork();
   if (*pid == 0) {
     char* argv[MAX_NUM_ARGS + 2];
-    argv[0] = &cmd.name[0];
-    memcpy(&argv[1], cmd.args, MAX_NUM_ARGS);
-    argv[MAX_NUM_ARGS+1] = 0;
-
+    command_to_argv(cmd, argv);
+    
     execvp(argv[0], argv);
     strcpy(error_msg, "Command not found");
     return false;
   }
   return true;
+}
+
+void command_to_argv(const command cmd, char* argv[]) {
+  argv[0] = &cmd.name[0];
+  memcpy(&argv[1], cmd.args, MAX_NUM_ARGS);
+  argv[MAX_NUM_ARGS+1] = 0;
 }

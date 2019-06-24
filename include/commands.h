@@ -17,4 +17,6 @@ extern int num_args(const command cmd);
 extern bool parse_command(const char* line, command* cmd);
 extern bool run_command(const command cmd, pid_t* pid);
 
+extern void command_to_argv(const command cmd, char* argv[]);
+
 #endif // COMMANDS_H_INCLUDED

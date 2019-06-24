@@ -5,9 +5,12 @@
 
 #define PROMPT "seashell> "
 
+#define BOOKMARK_FILE "~/.seashell_bookmarks"
+
+#define NOT_IMPLEMENTED(name) printf("%s has not yet been implemented\n", name)
+
 #define MAX_CMD_LEN 256
 #define MAX_ERR_LEN 256
-
 #define MAX_CMD_NAME_LEN 32
 #define MAX_NUM_ARGS 32
 
