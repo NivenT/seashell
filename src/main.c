@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include "utils.h"
 #include "commands.h"
 #include "builtins.h"
@@ -12,7 +15,7 @@
 
 char error_msg[MAX_ERR_LEN] = {0};
 
-bool read_line(char* line) {
+bool read_line_custom(char* line) {
   printf(PROMPT);
   if (fgets(line, MAX_CMD_LEN, stdin) == NULL) {
     strcpy(error_msg, "Could not read user input (fgets returned NULL)");
@@ -34,7 +37,26 @@ bool read_line(char* line) {
   return succ;
 }
 
+bool read_line(char* line) {
+  char* temp = readline(PROMPT);
+  int len = strlen(temp);
+
+  bool succ = temp && len < MAX_CMD_LEN;
+  if (succ) {
+    strcpy(line, temp);
+    if (*temp) add_history(line);
+  } else {
+    line[0] = ' '; // Make line non-empty so the error msg gets printed
+    sprintf(error_msg, "User input was too long; it was %d chars, but only %d chars allowed",
+	    len, MAX_CMD_LEN-1);
+  }
+
+  if (temp) free(temp);
+  return succ;
+}
+
 int main(int argc, char *argv[]) {
+  rl_bind_key('\t', rl_complete);
   pid_t seashell_pid = getpid();
   
   while (true) {
