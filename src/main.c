@@ -38,7 +38,13 @@ bool read_line_custom(char* line) {
 }
 
 bool read_line(char* line) {
-  char* temp = readline(PROMPT);
+  char prompt[MAX_PROMPT_LEN];
+  char cwd[MAX_PTH_LEN];
+  
+  getcwd(cwd, MAX_PTH_LEN);
+  sprintf(prompt, PROMPT, cwd);
+  
+  char* temp = readline(prompt);
   int len = strlen(temp);
 
   bool succ = temp && len < MAX_CMD_LEN;

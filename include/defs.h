@@ -3,12 +3,14 @@
 
 #include <stdbool.h>
 
-#define PROMPT "seashell> "
+#define PROMPT "seashell:%s> "
 
 #define BOOKMARK_FILE "~/.seashell_bookmarks"
 
 #define NOT_IMPLEMENTED(name) printf("%s has not yet been implemented\n", name)
 
+#define MAX_PTH_LEN 64
+#define MAX_PROMPT_LEN (MAX_PTH_LEN + 11)
 #define MAX_CMD_LEN 256
 #define MAX_ERR_LEN 256
 #define MAX_CMD_NAME_LEN 32
