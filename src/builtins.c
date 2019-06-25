@@ -51,8 +51,6 @@ bool bookmark(const command cmd) {
   opterr = 0;
   optind = 1;
   while(true) {
-    int prev_optind = optind;
-    
     char c = getopt_long(argc, argv, "s:n:g:l", options, NULL);
     if (c == -1) break;
     if (c == '?') continue;

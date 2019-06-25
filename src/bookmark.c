@@ -79,10 +79,13 @@ bool goto_bookmark(const char* name) {
     sprintf(num, "%d", l);
     for (char* tkn = num; tkn; tkn = strsep(&trimmed, " ")) {
       if (strcmp(tkn, name) == 0) {
-	chdir(strsep(&backup, " "));
+	chdir(strsep(&backup, " ")); // TODO: Check for errors
+	goto FUNC_END;
       }
     }
   }
+ FUNC_END:
+  close(fd);
   return true;
 }
 
