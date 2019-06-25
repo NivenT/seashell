@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "utils.h"
 
@@ -29,4 +30,14 @@ char* join(const char** beg, const char** end, const char* delim) {
     len = new_len;
   }
   return ret;
+}
+
+bool write_all(int fd, const void* buf, size_t count) {
+  for (size_t remaining = count; remaining > 0;) {
+    int written = write(fd, buf, remaining);
+    if (written == -1) return false;
+    buf += written;
+    remaining -= written;
+  }
+  return true;
 }

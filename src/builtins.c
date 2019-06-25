@@ -6,6 +6,7 @@
 #include <getopt.h>
 
 #include "builtins.h"
+#include "bookmark.h"
 #include "utils.h"
 
 const char* builtins[] = {"exit", "quit", "cd", "bookmark", ""};
@@ -42,6 +43,11 @@ bool bookmark(const command cmd) {
   command_to_argv(cmd, argv);
   int argc = num_args(cmd) + 1;
 
+  char save_path[MAX_PTH_LEN] = {0};
+  char name[MAX_PTH_LEN] = {0};
+  char goto_name[MAX_PTH_LEN] = {0};
+  bool list = false;
+  
   opterr = 0;
   optind = 1;
   while(true) {
@@ -52,13 +58,17 @@ bool bookmark(const command cmd) {
     if (c == '?') continue;
 
     switch(c) {
-    case 's': NOT_IMPLEMENTED("bookmark --save"); break;
-    case 'n': NOT_IMPLEMENTED("bookmark --name"); break;
-    case 'g': NOT_IMPLEMENTED("bookmark --goto"); break;
-    case 'l': NOT_IMPLEMENTED("bookmark --list"); break;
+    case 's': strcpy(save_path, optarg); break;
+    case 'n': strcpy(name, optarg); break;
+    case 'g': strcpy(goto_name, optarg); break;
+    case 'l': list = true; break;
     }
   }
-  return true;
+
+  if (list) return list_bookmarks();
+  else if (save_path[0]) return save_bookmark(save_path, name);
+  else if (goto_name[0]) return goto_bookmark(goto_name);
+  else return true;
 }
 
 bool handle_builtin(const command cmd, bool* is_builtin) {

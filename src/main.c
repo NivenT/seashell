@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pwd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -14,6 +15,7 @@
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 char error_msg[MAX_ERR_LEN] = {0};
+char* home_dir = NULL;
 
 bool read_line_custom(char* line) {
   printf(PROMPT);
@@ -64,6 +66,10 @@ bool read_line(char* line) {
 int main(int argc, char *argv[]) {
   rl_bind_key('\t', rl_complete);
   pid_t seashell_pid = getpid();
+
+  if ((home_dir = getenv("HOME")) == NULL) {
+    home_dir = getpwuid(getuid())->pw_dir;
+  }
   
   while (true) {
     char line[MAX_CMD_LEN];
