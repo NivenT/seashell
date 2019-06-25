@@ -9,7 +9,7 @@
 #include "bookmark.h"
 #include "utils.h"
 
-const char* builtins[] = {"exit", "quit", "cd", "bookmark", ""};
+static const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", ""};
 
 bool cd(const command cmd) {
   if (num_args(cmd) != 1) {
@@ -85,6 +85,7 @@ bool handle_builtin(const command cmd, bool* is_builtin) {
   case 0: case 1: exit(0); break;
   case 2: return cd(cmd); break;
   case 3: return bookmark(cmd); break;
+  case 4: printf("%s\n", home_dir); break;
   default: *is_builtin = false; break;
   }
   

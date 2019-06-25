@@ -18,7 +18,10 @@ char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
 
 bool read_line_custom(char* line) {
-  printf(PROMPT);
+  char cwd[MAX_PTH_LEN];
+  getcwd(cwd, MAX_PTH_LEN);
+  
+  printf(PROMPT, cwd);
   if (fgets(line, MAX_CMD_LEN, stdin) == NULL) {
     strcpy(error_msg, "Could not read user input (fgets returned NULL)");
     return false;

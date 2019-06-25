@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "utils.h"
 
@@ -40,4 +41,14 @@ bool write_all(int fd, const void* buf, size_t count) {
     remaining -= written;
   }
   return true;
+}
+
+char* trim(char* str) {
+  if (!str) return NULL;
+  while (isspace(*str) && *str) str++;
+  char* end = str;
+  while (*end) end++;
+  while (end != str && (isspace(*(end-1)))) end--;
+  *end = '\0';
+  return str;
 }

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "bookmark.h"
 #include "utils.h"
@@ -26,18 +27,22 @@ char* get_bookmark_file() {
 }
 
 bool save_bookmark(const char* path, const char* name) {
-  int fd = open(get_bookmark_file(), O_WRONLY | O_CREAT | O_APPEND);
+  // TODO: Remember what this 0644 does
+  int fd = open(get_bookmark_file(), O_RDWR | O_CREAT | O_APPEND, 0644);
   if (fd == -1) {
     strcpy(error_msg, "Could not open bookmark file");
     return false;
   }
   char line[MAX_BM_LINE_LEN];
   sprintf(line, "%s %s\n", path, name);
-  
-  if (!write_all(fd, line, MAX_BM_LINE_LEN)) {
+
+  printf("%s", line);
+  if (!write_all(fd, line, strlen(line))) {
+    close(fd);
     strcpy(error_msg, "Could not write to bookmark file");
     return false;
   }
+  close(fd);
   return true;
 }
 
@@ -45,15 +50,39 @@ bool list_bookmarks() {
   int fd = open(get_bookmark_file(), O_RDONLY);
   if (fd == -1) return true;
   FILE* f = fdopen(fd, "r");
-  if (!f) return true;
+  if (!f) {
+    close(fd);
+    return true;
+  }
   char line[MAX_PTH_LEN]; // TODO: Technically should be bigger
   for (int l = 1; fgets(line, MAX_CMD_LEN, f); l++) {
     printf("%d %s", l, line);
   }
+  close(fd);
   return true;
 }
 
 bool goto_bookmark(const char* name) {
+  int fd = open(get_bookmark_file(), O_RDONLY);
+  if (fd == -1) return true;
+  FILE* f = fdopen(fd, "r");
+  if (!f) {
+    close(fd);
+    return true;
+  }
+  char line[MAX_PTH_LEN];
+  for (int l = 1; fgets(line, MAX_CMD_LEN, f); l++) {
+    char* trimmed = trim(line);
+    char* backup = trimmed;
+    
+    char num[10];
+    sprintf(num, "%d", l);
+    for (char* tkn = num; tkn; tkn = strsep(&trimmed, " ")) {
+      if (strcmp(tkn, name) == 0) {
+	chdir(strsep(&backup, " "));
+      }
+    }
+  }
   return true;
 }
 

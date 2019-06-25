@@ -3,7 +3,7 @@
 
 #include "commands.h"
 
-extern const char* builtins[];
+//extern const char* builtins[];
 
 extern bool handle_builtin(const command cmd, bool* is_builtin);
 
