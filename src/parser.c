@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 
 #include "parser.h"
 
@@ -10,26 +11,35 @@ void free_tkn(void* data) {
   free_string(&tkn->str);
 }
 
-token tokenize(string s) {
-  token ret;
+void add_tkn(vec* tkns, string* s) {
+  if (!s || s->len == 0) return;
+  token temp;
 
-  ret.type = SYMBOL;
-  ret.str = s;
+  temp.type = SYMBOL;
+  temp.str = *s;
   
-  return ret;
+  vec_push(tkns, &temp);
+  *s = string_new(NULL);
 }
 
 vec parse_string(const char* line) {
   vec tkns = new_vec(sizeof(token), 0, free_tkn);
   string curr = string_new(NULL);
   for (int i = 0; line[i]; i++) {
-    switch(line[i]) {
-    default: string_push(&curr, line[i]); break;
+    if (curr.len > 0 && curr.cstr[0] == '\"') {
+      string_push(&curr, line[i]);
+      if (line[i] == '\"') {
+	add_tkn(&tkns, &curr);
+      }
+    } else {
+      if (isspace(line[i])) {
+	add_tkn(&tkns, &curr);
+      } else {
+	string_push(&curr, line[i]);
+      }
     }
   }
-
-  token temp = tokenize(curr);
-  vec_push(&tkns, &temp);
+  add_tkn(&tkns, &curr);
   return tkns;
 }
 
