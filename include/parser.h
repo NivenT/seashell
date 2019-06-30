@@ -4,7 +4,7 @@
 #include "defs.h"
 
 // Not sure how I feel about this style (e.g. vs what's used in commands.h)
-typedef enum {SYMBOL, STRING, PIPE, LITERAL} token_t;
+typedef enum {SYMBOL, STRING, PIPE} token_t;
 typedef struct {
   token_t type;
   string str;
