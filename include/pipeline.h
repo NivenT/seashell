@@ -6,6 +6,7 @@
 typedef struct pipeline pipeline;
 
 // Would a vec be better than a linked list?
+// yes, it would. Especially when I implement input/output files. Oh well
 struct pipeline {
   command cmd;
   pipeline* next;

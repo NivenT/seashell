@@ -84,15 +84,14 @@ int main(int argc, char *argv[]) {
     bool is_builtin = false;
 
     CHECK_ERROR(error, read_line(line));
-    /**
+    /**/
     if (line[0] != '\0') {
       vec tkns = parse_string(line);
       pipeline pipe;
       CHECK_ERROR(error, build_pipeline(tkns, &pipe));
       CHECK_ERROR(error, execute_pipeline(pipe, &child_pid));
     } else continue;
-    /**/
-    /**/
+    /**
     if (line[0] != '\0') {
       CHECK_ERROR(error, parse_command(line, &cmd));
       CHECK_ERROR(error, handle_builtin(cmd, &is_builtin));
