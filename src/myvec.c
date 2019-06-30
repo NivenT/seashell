@@ -37,5 +37,5 @@ void vec_push(vec* v, void* elem) {
 }
 
 void* vec_get(vec* v, int n) {
-  return &v->data + (v->elemsz * n);
+  return v->data + (v->elemsz * n);
 }

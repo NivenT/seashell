@@ -7,10 +7,14 @@
 string string_new(char* str) {
   string ret;
   
-  ret.len = strlen(str) + 1;
-  ret.cap = nxtpwr2(ret.len);
-  ret.cstr = strdup(str);
-
+  ret.len = str ? strlen(str) : 0;
+  ret.cap = str ? nxtpwr2(ret.len+1) : 0;
+  ret.cstr = NULL;
+  if (ret.cap > 0) {
+    ret.cstr = malloc(ret.cap);
+    strcpy(ret.cstr, str);
+  }
+  
   return ret;
 }
 

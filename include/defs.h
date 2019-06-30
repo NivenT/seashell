@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "mystring.h"
+#include "myvec.h"
 
 #define PROMPT "seashell:%s> "
 

@@ -80,14 +80,13 @@ int main(int argc, char *argv[]) {
     command cmd = {{0}, {0}};
     pid_t child_pid = 0;
     bool error = false;
-    bool is_builtin = false;  
-    int num_tkns = 0;
+    bool is_builtin = false;
     
     CHECK_ERROR(error, read_line(line));
 
-    token* tkns = parse_string(line, &num_tkns);
-    printf("Parsed tokens (%d): ", num_tkns);
-    print_tokens(tkns, num_tkns);
+    vec tkns = parse_string(line);
+    printf("Parsed tokens (%d): ", vec_size(&tkns));
+    print_tokens(vec_get(&tkns, 0), vec_size(&tkns));
     printf("\n");
     continue;
     

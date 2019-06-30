@@ -7,10 +7,11 @@
 typedef enum {SYMBOL, STRING, PIPE, LITERAL} token_t;
 typedef struct {
   token_t type;
-  char* str;
+  string str;
 } token;
 
-extern token* parse_string(const char* line, int* num_tkns);
+// Would it be better to return a token* instead for the type information?
+extern vec parse_string(const char* line);
 extern void print_tokens(const token* tkns, int num);
 
 #endif // PARSER_H_INCLUDED
