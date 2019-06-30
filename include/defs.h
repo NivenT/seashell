@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "mystring.h"
+
 #define PROMPT "seashell:%s> "
 
 #define NOT_IMPLEMENTED(name) printf("%s has not yet been implemented\n", name)

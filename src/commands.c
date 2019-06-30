@@ -62,6 +62,8 @@ bool run_command(const command cmd, pid_t* pid) {
   if (*pid == 0) {
     char* argv[MAX_NUM_ARGS + 2];
     command_to_argv(cmd, argv);
+
+    printf("argv[0]: %s\n", argv[0]);
     
     execvp(argv[0], argv);
     strcpy(error_msg, "Command not found");

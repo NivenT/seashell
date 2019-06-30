@@ -9,5 +9,6 @@ extern bool ends_with(const char* str, const char* suffix);
 extern char* join(const char** beg, const char** end, const char* delim);
 extern bool write_all(int fd, const void* buf, size_t count);
 extern char* trim(char* str);
+extern int nxtpwr2(int x);
 
 #endif // UTILS_H_INCLUDED

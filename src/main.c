@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "commands.h"
 #include "builtins.h"
+#include "parser.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
@@ -80,8 +81,16 @@ int main(int argc, char *argv[]) {
     pid_t child_pid = 0;
     bool error = false;
     bool is_builtin = false;  
+    int num_tkns = 0;
     
     CHECK_ERROR(error, read_line(line));
+
+    token* tkns = parse_string(line, &num_tkns);
+    printf("Parsed tokens (%d): ", num_tkns);
+    print_tokens(tkns, num_tkns);
+    printf("\n");
+    continue;
+    
     if (line[0] != '\0') {
       CHECK_ERROR(error, parse_command(line, &cmd));
       CHECK_ERROR(error, handle_builtin(cmd, &is_builtin));
