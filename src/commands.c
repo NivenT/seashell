@@ -72,7 +72,7 @@ bool run_command(const command cmd, pid_t* pid) {
   return true;
 }
 
-void command_to_argv(const command cmd, char* argv[]) {
+void command_to_argv(command cmd, char* argv[]) {
   argv[0] = &cmd.name[0];
   memcpy(&argv[1], cmd.args, MAX_NUM_ARGS);
   argv[MAX_NUM_ARGS+1] = 0;

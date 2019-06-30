@@ -12,6 +12,7 @@
 #include "commands.h"
 #include "builtins.h"
 #include "parser.h"
+#include "pipeline.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
@@ -84,12 +85,31 @@ int main(int argc, char *argv[]) {
     
     CHECK_ERROR(error, read_line(line));
 
-    vec tkns = parse_string(line);
-    printf("Parsed tokens (%d): ", vec_size(&tkns));
-    print_tokens(vec_get(&tkns, 0), vec_size(&tkns));
-    printf("\n");
-    continue;
+    if (line[0] != '\0') {
+      vec tkns = parse_string(line);
+      /*
+	printf("Parsed tokens (%d): ", vec_size(&tkns));
+	print_tokens(vec_get(&tkns, 0), vec_size(&tkns));
+	printf("\n");
+	continue;
+      */
+      pipeline pipe;
+      CHECK_ERROR(error, build_pipeline(tkns, &pipe));
+
+      pipeline* curr = &pipe;
+      while (curr) {
+	printf("%s ", curr->cmd.name);
+	for (int i = 0; i < MAX_NUM_ARGS && curr->cmd.args[i]; i++) {
+	  printf("\'%s\' ", curr->cmd.args[i]);
+	}
+	printf("| ");
+	curr = curr->next;
+      }
+      printf("\n");
+      
+    } else continue;
     
+    /*
     if (line[0] != '\0') {
       CHECK_ERROR(error, parse_command(line, &cmd));
       CHECK_ERROR(error, handle_builtin(cmd, &is_builtin));
@@ -97,6 +117,7 @@ int main(int argc, char *argv[]) {
 	CHECK_ERROR(error, run_command(cmd, &child_pid));
       }
     } else continue;
+    */
     
     if (!error) {
       if (child_pid != 0) waitpid(child_pid, NULL, 0);
