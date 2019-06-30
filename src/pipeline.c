@@ -1,8 +1,12 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "pipeline.h"
 #include "parser.h"
+#include "builtins.h"
 
 bool build_pipeline(vec tkns, pipeline* pipe) {
   if (!pipe) exit(0xBAD); // This is a programmer error, not a user error
@@ -46,4 +50,57 @@ bool build_pipeline(vec tkns, pipeline* pipe) {
     idx++;
   }
   return true;
+}
+
+bool execute_pipeline(pipeline p, pid_t* last_pid) {
+  bool is_builtin = false;
+  if (!handle_builtin(p.cmd, &is_builtin)) {
+    return false;
+  } else if (!is_builtin) {
+    const size_t ncmds = num_cmds(&p);
+    const size_t nfds = (ncmds - 1) << 1;
+    int fds[nfds]; // I'm surprised this is legal
+
+    for (size_t i = 0; i < nfds >> 1; i++) {
+      if (pipe(&fds[i << 1]) < 0) {
+	strcpy(error_msg, "Could not create a pipe");
+	return false;
+      }
+    }
+
+    pipeline* curr = &p;
+    char* argv[MAX_NUM_ARGS + 2];
+    for (size_t i = 0; i < ncmds; i++) {
+      *last_pid = fork();
+      if (*last_pid == 0) {
+	if (i > 0) {
+	  dup2(fds[(i-1) << 1], STDIN_FILENO);
+	}
+
+	if (i + 1 < ncmds) {
+	  dup2(fds[1+(i << 1)], STDOUT_FILENO);
+	}
+	
+	// TODO: Abstract away into closeall function
+	for (int j = 0; j < nfds; j++) {
+	  close(fds[j]);
+	}
+	
+	command_to_argv(curr->cmd, argv);
+	execvp(argv[0], argv);
+	sprintf(error_msg, "Could not run command %s: %s", curr->cmd.name, strerror(errno));
+	return false;
+      }
+      curr = curr->next;
+    }
+
+    for (int j = 0; j < nfds; j++) {
+      close(fds[j]);
+    }
+  }
+  return true;
+}
+
+int num_cmds(const pipeline* pipe) {
+  return pipe ? 1 + num_cmds(pipe->next) : 0;
 }

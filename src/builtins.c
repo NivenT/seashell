@@ -12,8 +12,10 @@
 static const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", ""};
 
 bool cd(const command cmd) {
-  if (num_args(cmd) != 1) {
-    strcpy(error_msg, "cd: too many arguments");
+  int count = num_args(cmd);
+  if (count != 1) {
+    sprintf(error_msg, "cd: too %s arguments; there should be exactly 1",
+	    count > 1 ? "many" : "few");
     return false;
   }
 
