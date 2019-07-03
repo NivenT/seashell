@@ -14,5 +14,6 @@ struct command {
 };
 
 extern int num_args(const command cmd);
+extern void free_cmd(command* cmd);
 
 #endif // COMMANDS_H_INCLUDED

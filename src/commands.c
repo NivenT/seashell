@@ -12,3 +12,10 @@ int num_args(const command cmd) {
   while (cnt < MAX_NUM_ARGS && cmd.args[cnt]) cnt++;
   return cnt;
 }
+
+void free_cmd(command* cmd) {
+  if (cmd->name) free(cmd->name);
+  for (int i = 0; i < MAX_NUM_ARGS && cmd->args[i]; i++) {
+    free(cmd->args[i]);
+  }
+}

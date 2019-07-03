@@ -62,7 +62,7 @@ bool bookmark(const command cmd) {
   else return true;
 }
 
-bool handle_builtin(const command cmd, bool* is_builtin) {
+bool handle_builtin(command cmd, bool* is_builtin) {
   int idx = -1;
   for (int i = 0; builtins[i]; i++) {
     if (strcmp(builtins[i], cmd.name) == 0) {
@@ -73,7 +73,7 @@ bool handle_builtin(const command cmd, bool* is_builtin) {
 
   *is_builtin = true;
   switch(idx) {
-  case 0: case 1: exit(0); break;
+  case 0: case 1: free_cmd(&cmd); exit(0); break;
   case 2: return cd(cmd); break;
   case 3: return bookmark(cmd); break;
   case 4: printf("%s\n", home_dir); break;

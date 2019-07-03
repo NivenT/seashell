@@ -35,7 +35,6 @@ bool build_pipeline(vec tkns, pipeline* pipe) {
       return false;
     }
 
-    //strcpy(curr->cmd.name, tkn->str.cstr);
     curr->cmd.name = tkn->str.cstr;
     int arg = 0;
     // I always love writing lines like this
@@ -44,7 +43,6 @@ bool build_pipeline(vec tkns, pipeline* pipe) {
 	strcpy(error_msg, "Exceeded the maximum number of allowed arguments in a command");
 	return false;
       }
-      // strdup?
       curr->cmd.args[arg++] = tkn->str.cstr;
     }
     if (arg < MAX_NUM_ARGS) curr->cmd.args[arg] = 0;
@@ -104,4 +102,19 @@ bool execute_pipeline(pipeline p, pid_t* last_pid) {
 
 int num_cmds(const pipeline* pipe) {
   return pipe ? 1 + num_cmds(pipe->next) : 0;
+}
+
+void free_pipeline(pipeline* pipe) {
+  if (pipe->next) {
+    free_pipeline(pipe->next);
+    free(pipe->next);
+  }
+  free_cmd(&pipe->cmd);
+  /*
+  pipeline* curr = pipe;
+  while (curr) {
+    free_cmd(&curr->cmd);
+    curr = curr->next;
+  }
+  */
 }

@@ -7,9 +7,12 @@
 // TODO: Actually manage memory in this program. There should be many more frees
 
 void free_tkn(void* data) {
+  // The vector returned by parse_string does not own the undrlying char*'s
+  /*
   if (!data) return;
   token* tkn = (token*)data;
   free_string(&tkn->str);
+  */
 }
 
 void add_tkn(vec* tkns, string* s) {
@@ -30,7 +33,7 @@ void add_tkn(vec* tkns, string* s) {
   } else if (s->len == 2 && s->cstr[0] == '\\') {
     memmove(s->cstr, s->cstr + 1, s->len--);
 
-    temp.type = SYMBOL; // Is there really a difference between this and SYMBOL?
+    temp.type = SYMBOL;
     temp.str = *s;
   } else {
     temp.type = SYMBOL;

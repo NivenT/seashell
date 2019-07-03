@@ -18,7 +18,7 @@
 
 char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
-
+/*
 bool read_line_custom(char* line) {
   char cwd[MAX_PTH_LEN];
   getcwd(cwd, MAX_PTH_LEN);
@@ -43,7 +43,7 @@ bool read_line_custom(char* line) {
   }
   return succ;
 }
-
+*/
 bool read_line(char* line) {
   char prompt[MAX_PROMPT_LEN];
   char cwd[MAX_PTH_LEN];
@@ -57,7 +57,7 @@ bool read_line(char* line) {
   bool succ = temp && len < MAX_CMD_LEN;
   if (succ) {
     strcpy(line, temp);
-    if (*temp) add_history(line);
+    if (line[0]) add_history(line);
   } else {
     line[0] = ' '; // Make line non-empty so the error msg gets printed
     sprintf(error_msg, "User input was too long; it was %d chars, but only %d chars allowed",
@@ -68,7 +68,13 @@ bool read_line(char* line) {
   return succ;
 }
 
+// TODO: Don't run from children
+void cleanup() {
+  rl_clear_history();
+}
+
 int main(int argc, char *argv[]) {
+  atexit(cleanup);
   rl_bind_key('\t', rl_complete);
   pid_t seashell_pid = getpid();
 
@@ -82,20 +88,22 @@ int main(int argc, char *argv[]) {
     pid_t child_pid = 0;
     bool error = false;
     bool is_builtin = false;
-
+    pipeline pipe;
+    
     CHECK_ERROR(error, read_line(line));
     if (line[0] != '\0') {
       vec tkns = parse_string(line);
-      pipeline pipe;
       CHECK_ERROR(error, build_pipeline(tkns, &pipe));
+      free_vec(&tkns);
       CHECK_ERROR(error, execute_pipeline(pipe, &child_pid));
+      free_pipeline(&pipe);
     } else continue;
     
     if (!error) {
       if (child_pid != 0) waitpid(child_pid, NULL, 0);
     } else {
       printf("ERROR: %s\n", error_msg);
-      if (getpid() != seashell_pid) exit(0);
+      if (getpid() != seashell_pid) exit(0xBAD);
     }
   }
   return 0;
