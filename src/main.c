@@ -78,28 +78,18 @@ int main(int argc, char *argv[]) {
   
   while (true) {
     char line[MAX_CMD_LEN];
-    command cmd = {{0}, {0}};
+    command cmd = {0, {0}};
     pid_t child_pid = 0;
     bool error = false;
     bool is_builtin = false;
 
     CHECK_ERROR(error, read_line(line));
-    /**/
     if (line[0] != '\0') {
       vec tkns = parse_string(line);
       pipeline pipe;
       CHECK_ERROR(error, build_pipeline(tkns, &pipe));
       CHECK_ERROR(error, execute_pipeline(pipe, &child_pid));
     } else continue;
-    /**
-    if (line[0] != '\0') {
-      CHECK_ERROR(error, parse_command(line, &cmd));
-      CHECK_ERROR(error, handle_builtin(cmd, &is_builtin));
-      if (!is_builtin) {
-	CHECK_ERROR(error, run_command(cmd, &child_pid));
-      }
-    } else continue;
-    /**/
     
     if (!error) {
       if (child_pid != 0) waitpid(child_pid, NULL, 0);

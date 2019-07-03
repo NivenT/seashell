@@ -35,7 +35,8 @@ bool build_pipeline(vec tkns, pipeline* pipe) {
       return false;
     }
 
-    strcpy(curr->cmd.name, tkn->str.cstr);
+    //strcpy(curr->cmd.name, tkn->str.cstr);
+    curr->cmd.name = tkn->str.cstr;
     int arg = 0;
     // I always love writing lines like this
     while (++idx < size && (tkn = (token*)vec_get(&tkns, idx))->type != PIPE) {
@@ -86,8 +87,8 @@ bool execute_pipeline(pipeline p, pid_t* last_pid) {
 	  close(fds[j]);
 	}
 	
-	command_to_argv(curr->cmd, argv);
-	execvp(argv[0], argv);
+	//command_to_argv(curr->cmd, argv);
+	execvp(curr->cmd.name, (char**)&curr->cmd);
 	sprintf(error_msg, "Could not run command %s: %s", curr->cmd.name, strerror(errno));
 	return false;
       }
