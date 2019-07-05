@@ -84,8 +84,7 @@ bool execute_pipeline(pipeline p, pid_t* last_pid) {
 	for (int j = 0; j < nfds; j++) {
 	  close(fds[j]);
 	}
-	
-	//command_to_argv(curr->cmd, argv);
+        
 	execvp(curr->cmd.name, (char**)&curr->cmd);
 	sprintf(error_msg, "Could not run command %s: %s", curr->cmd.name, strerror(errno));
 	return false;
@@ -110,11 +109,4 @@ void free_pipeline(pipeline* pipe) {
     free(pipe->next);
   }
   free_cmd(&pipe->cmd);
-  /*
-  pipeline* curr = pipe;
-  while (curr) {
-    free_cmd(&curr->cmd);
-    curr = curr->next;
-  }
-  */
 }
