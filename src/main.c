@@ -5,83 +5,32 @@
 #include <string.h>
 #include <pwd.h>
 
-#include <readline/readline.h>
-#include <readline/history.h>
-
 #include "utils.h"
 #include "commands.h"
 #include "builtins.h"
 #include "parser.h"
 #include "pipeline.h"
+#include "readline.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
-/*
-bool read_line_custom(char* line) {
-  char cwd[MAX_PTH_LEN];
-  getcwd(cwd, MAX_PTH_LEN);
-  
-  printf(PROMPT, cwd);
-  if (fgets(line, MAX_CMD_LEN, stdin) == NULL) {
-    strcpy(error_msg, "Could not read user input (fgets returned NULL)");
-    return false;
-  }
-  bool succ = ends_with(line, "\n");
-  if (succ) {
-    int len = strlen(line);
-    line[len-1] = '\0'; // get rid of newline
-  } else {
-    int len = MAX_CMD_LEN;
-    while (strstr(line, "\n") == NULL) {
-      fgets(line, MAX_CMD_LEN, stdin);
-      len += strlen(line);
-    }
-    sprintf(error_msg, "User input was too long; it was %d chars, but only %d chars allowed",
-	    len, MAX_CMD_LEN-1);
-  }
-  return succ;
-}
-*/
-bool read_line(char* line) {
-  char prompt[MAX_PROMPT_LEN];
-  char cwd[MAX_PTH_LEN];
-  
-  getcwd(cwd, MAX_PTH_LEN);
-  sprintf(prompt, PROMPT, cwd);
-  
-  char* temp = readline(prompt);
-  int len = strlen(temp);
 
-  bool succ = temp && len < MAX_CMD_LEN;
-  if (succ) {
-    strcpy(line, temp);
-    if (line[0]) add_history(line);
-  } else {
-    line[0] = ' '; // Make line non-empty so the error msg gets printed
-    sprintf(error_msg, "User input was too long; it was %d chars, but only %d chars allowed",
-	    len, MAX_CMD_LEN-1);
-  }
-
-  if (temp) free(temp);
-  return succ;
-}
-
-// TODO: Don't run from children
 void cleanup() {
-  rl_clear_history();
+  //if (home_dir) free(home_dir);
+  if (history_file) free(history_file);
 }
 
 int main(int argc, char *argv[]) {
   atexit(cleanup);
-  rl_bind_key('\t', rl_complete);
+  
   pid_t seashell_pid = getpid();
-
   if ((home_dir = getenv("HOME")) == NULL) {
     home_dir = getpwuid(getuid())->pw_dir;
   }
-  
+
+  init_linenoise();
   while (true) {
     char line[MAX_CMD_LEN];
     command cmd = {0, {0}};

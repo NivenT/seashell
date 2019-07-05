@@ -9,7 +9,7 @@
 #include "bookmark.h"
 #include "utils.h"
 
-static const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", ""};
+static const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", NULL};
 
 bool cd(const command cmd) {
   int count = num_args(cmd);

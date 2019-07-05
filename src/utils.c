@@ -33,6 +33,33 @@ char* join(const char** beg, const char** end, const char* delim) {
   return ret;
 }
 
+char* concat(const char* str1, const char* str2) {
+  if (!str1 || !str2) return NULL;
+  int len1 = strlen(str1), len2 = strlen(str2);
+
+  char* ret = malloc(len1+len2+1);
+  strcpy(ret, str1);
+  strcpy(ret + len1, str2);
+  return ret;
+}
+
+// TODO: Make more efficient
+char* concat_many(const char** strs) {
+  if (!strs) return NULL;
+  int len = 0;
+  for (const char** str = strs; *str; ++str) {
+    len += strlen(*str);
+  }
+
+  char* ret = malloc(len+1);
+  char* curr = ret;
+  for (const char** str = strs; *str; ++str) {
+    strcpy(curr, *str);
+    curr += strlen(*str);
+  }
+  return ret;
+}
+
 bool write_all(int fd, const void* buf, size_t count) {
   for (size_t remaining = count; remaining > 0;) {
     int written = write(fd, buf, remaining);
