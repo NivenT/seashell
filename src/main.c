@@ -17,12 +17,20 @@
 char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
 
-void cleanup() {
-  //if (home_dir) free(home_dir);
+static void test_some_func() {
+  char* tests[] = {"word", "word ", "word Word", "word Word     Woorld!", NULL};
+  for (int i = 0; tests[i]; i++) {
+    printf("last_word(%s) = %s\n", tests[i], last_word(tests[i]));
+  }
+  exit(0);
+}
+
+static void cleanup() {
   if (history_file) free(history_file);
 }
 
 int main(int argc, char *argv[]) {
+  //test_some_func();
   atexit(cleanup);
   
   pid_t seashell_pid = getpid();

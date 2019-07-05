@@ -11,12 +11,17 @@
 
 char* bookmark_file = NULL;
 
+static void cleanup() {
+  if (bookmark_file) free(bookmark_file);
+}
+
 char* get_bookmark_file() {
   if (!bookmark_file) {
     int home_len = strlen(home_dir);
     int len = strlen(BOOKMARK_FILE) + home_len + 1;
     
     bookmark_file = malloc(len+1);
+    atexit(cleanup);
 
     strcpy(bookmark_file, home_dir);
     bookmark_file[home_len] = '/';
@@ -58,6 +63,7 @@ bool list_bookmarks() {
   for (int l = 1; fgets(line, MAX_CMD_LEN, f); l++) {
     printf("%d %s", l, line);
   }
+  fclose(f);
   close(fd);
   return true;
 }

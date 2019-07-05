@@ -80,6 +80,15 @@ char* trim(char* str) {
   return str;
 }
 
+// "hi there" -> "there"
+// "hi " -> ""
+const char* last_word(const char* str) {
+  if (!str) return NULL;
+  const char* ret = str + strlen(str) - 1;
+  while (ret > str && !isspace(*ret)) --ret;
+  return isspace(*ret) ? ret + 1 : ret;
+}
+
 int nxtpwr2(int x) {
   x--;
   x |= x >> 1;

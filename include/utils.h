@@ -14,6 +14,8 @@ extern char* concat_many(const char** strs); // this is basically join without t
 // modifies argument
 extern char* trim(char* str);
 
+extern const char* last_word(const char* str);
+
 extern bool write_all(int fd, const void* buf, size_t count);
 
 extern int nxtpwr2(int x);

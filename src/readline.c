@@ -2,27 +2,74 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "readline.h"
+#include "builtins.h"
 #include "utils.h"
+
+#define COMPLETION_FUNC(type) static void complete_##type(const char* buf, linenoiseCompletions *lc)
+#define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
+#define CHECK_HINT(succ, hint) if (!succ) { succ = hint(buf, color, bold); }
+
+static const int red = 31;
+static const int green = 32;
+static const int yellow = 33;
+static const int blue = 34;
+static const int magenta = 35;
+static const int cyan = 36;
+static const int white = 37;
 
 char* history_file = NULL;
 
-static void completion(const char* buf, linenoiseCompletions *lc) {
-  if (!buf) return;
-  if (buf[0] == 'h') {
-    linenoiseAddCompletion(lc, "hello");
-    linenoiseAddCompletion(lc, "hello World");
+COMPLETION_FUNC(filenames) {
+  const char* word = last_word(buf);
+  DIR* dir = opendir(".");
+  if (dir) {
+    struct dirent* d;
+    while ((d = readdir(dir)) != NULL) {
+      if (starts_with(d->d_name, word)) {
+	char* beg = strndup(buf, word-buf);
+	char* full = concat(beg, d->d_name);
+	linenoiseAddCompletion(lc, full);
+	free(beg);
+	free(full);
+      }
+    }
+  }
+  closedir(dir);
+}
+
+COMPLETION_FUNC(builtins) {
+  for (int i = 0; builtins[i]; i++) {
+    if (starts_with(builtins[i], buf)) linenoiseAddCompletion(lc, builtins[i]);
   }
 }
 
-static char* hints(const char* buf, int* color, int* bold) {
-  if (strcasecmp(buf, "hello") == 0) {
-    *color = 35; // what color is this
-    *bold = 0;
-    return " World";
+HINTS_FUNC(builtins) {
+  for (int i = 0; builtins[i]; i++) {
+    int len = strlen(buf);
+    if (len >= 3 && strncmp(builtins[i], buf, len) == 0) {
+      *color = yellow;
+      *bold = 0;
+      // Not sure how to deal with the warning this generates
+      // I could use strdup to make a copy, but then it may never get freed...
+      return builtins[i] + len;
+    }
   }
   return NULL;
+}
+
+static void completion(const char* buf, linenoiseCompletions *lc) {
+  if (!buf) return;
+  complete_filenames(buf, lc);
+  complete_builtins(buf, lc);
+}
+
+static char* hints(const char* buf, int* color, int* bold) {
+  char* ret = NULL;
+  CHECK_HINT(ret, builtins_hints);
+  return ret;
 }
 
 void init_linenoise() {
