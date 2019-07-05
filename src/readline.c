@@ -24,9 +24,21 @@ char* history_file = NULL;
 
 COMPLETION_FUNC(filenames) {
   const char* word = last_word(buf);
-  DIR* dir = opendir(".");
-  if (dir) {
-    struct dirent* d;
+
+  DIR* dir = opendir(word);
+  bool is_dir = dir != NULL;
+
+  struct dirent* d;
+  if (is_dir) {
+    while ((d = readdir(dir)) != NULL) {
+      // TODO: Figure out a nice way to optionally add the /
+      char* strs[] = {buf, "/", d->d_name, NULL};
+      if (ends_with(buf, "/")) strs[1] = "";
+      char* full = concat_many((const char**)strs);
+      linenoiseAddCompletion(lc, full);
+      free(full);
+    }
+  } else if ((dir = opendir(".")) != NULL) {
     while ((d = readdir(dir)) != NULL) {
       if (starts_with(d->d_name, word)) {
 	char* beg = strndup(buf, word-buf);
@@ -37,7 +49,7 @@ COMPLETION_FUNC(filenames) {
       }
     }
   }
-  closedir(dir);
+  if (dir) closedir(dir);
 }
 
 COMPLETION_FUNC(builtins) {
