@@ -14,6 +14,20 @@
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
+/* TODO List (in order):
+ * Add alias builtin (e.g. alias ls "ls --color=auto")
+ * Execute .seashellrc file at startup (similar to .bashrc)
+ * Have tab completion take into account the location of the cursor
+ * Add tab completion for commands in /bin/ (and hints as well?)
+ * Actually do systems-y things
+ * * add custom signal handlers
+ * * add background processes
+ * * add kill builtin
+ * * add input/output files
+ * Support single quoted strings in input (e.g. 'like this' instead of just "like this")
+ */
+
+
 char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
 
