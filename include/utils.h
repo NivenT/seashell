@@ -3,6 +3,8 @@
 
 #include "defs.h"
 
+/// I wonder how many of these are implemented as standard c functions that I just don't know about
+
 extern bool starts_with(const char* str, const char* prefix);
 extern bool ends_with(const char* str, const char* suffix);
 
@@ -10,6 +12,7 @@ extern bool ends_with(const char* str, const char* suffix);
 extern char* join(const char** beg, const char** end, const char* delim);
 extern char* concat(const char* str1, const char* str2);
 extern char* concat_many(const char** strs); // this is basically join without the delim now that I think about it
+extern const char* rsplit(const char* str, const char* sep, char** before); // only before (if non-NULL) gets malloc'd
 
 // modifies argument
 extern char* trim(char* str);

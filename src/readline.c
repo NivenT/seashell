@@ -25,31 +25,23 @@ char* history_file = NULL;
 COMPLETION_FUNC(filenames) {
   const char* word = last_word(buf);
 
-  DIR* dir = opendir(word);
-  bool is_dir = dir != NULL;
+  char* fldr;
+  const char* file = rsplit(word, "/", &fldr);
 
-  struct dirent* d;
-  if (is_dir) {
+  DIR* dir = opendir(fldr && *fldr ? fldr : ".");
+  if (dir) {
+    struct dirent* d;
     while ((d = readdir(dir)) != NULL) {
-      // TODO: Figure out a nice way to optionally add the /
-      char* strs[] = {buf, "/", d->d_name, NULL};
-      if (ends_with(buf, "/")) strs[1] = "";
-      char* full = concat_many((const char**)strs);
-      linenoiseAddCompletion(lc, full);
-      free(full);
-    }
-  } else if ((dir = opendir(".")) != NULL) {
-    while ((d = readdir(dir)) != NULL) {
-      if (starts_with(d->d_name, word)) {
-	char* beg = strndup(buf, word-buf);
-	char* full = concat(beg, d->d_name);
+      if (strcmp(d->d_name, ".")*strcmp(d->d_name, "..") == 0) continue;
+      if (starts_with(d->d_name, file)) {
+	char* full = concat(buf, d->d_name + strlen(file));
 	linenoiseAddCompletion(lc, full);
-	free(beg);
 	free(full);
       }
     }
+    if (fldr) free(fldr);
+    closedir(dir);
   }
-  if (dir) closedir(dir);
 }
 
 COMPLETION_FUNC(builtins) {
@@ -59,14 +51,14 @@ COMPLETION_FUNC(builtins) {
 }
 
 HINTS_FUNC(builtins) {
+  linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
     int len = strlen(buf);
     if (len >= 3 && strncmp(builtins[i], buf, len) == 0) {
       *color = yellow;
       *bold = 0;
-      // Not sure how to deal with the warning this generates
-      // I could use strdup to make a copy, but then it may never get freed...
-      return builtins[i] + len;
+      linenoiseSetFreeHintsCallback(free);
+      return strdup(builtins[i] + len);
     }
   }
   return NULL;
@@ -85,6 +77,8 @@ static char* hints(const char* buf, int* color, int* bold) {
 }
 
 void init_linenoise() {
+  linenoiseSetMultiLine(1);
+
   linenoiseSetCompletionCallback(completion);
   linenoiseSetHintsCallback(hints);
 
@@ -117,7 +111,7 @@ bool read_line(char* line) {
 	    len, MAX_CMD_LEN-1);
   }
 
-  if (temp) free(temp);
+  if (temp) linenoiseFree(temp);
   return succ;
 }
 

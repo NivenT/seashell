@@ -60,6 +60,21 @@ char* concat_many(const char** strs) {
   return ret;
 }
 
+const char* rsplit(const char* str, const char* sep, char** before) {
+  if (!str || !sep) return before ? *before = NULL : NULL;
+  int len = strlen(str);
+  int len2 = strlen(sep);
+
+  for (const char* cur = str + len - 1; cur >= str; --cur) {
+    if (strncmp(cur, sep, len2) == 0) {
+      if (before) *before = strndup(str, cur - str);
+      return cur + len2;
+    }
+  }
+  if (before) *before = NULL;
+  return str;
+}
+
 bool write_all(int fd, const void* buf, size_t count) {
   for (size_t remaining = count; remaining > 0;) {
     int written = write(fd, buf, remaining);

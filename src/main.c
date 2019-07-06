@@ -18,9 +18,30 @@ char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
 
 static void test_some_func() {
-  char* tests[] = {"word", "word ", "word Word", "word Word     Woorld!", NULL};
-  for (int i = 0; tests[i]; i++) {
-    printf("last_word(%s) = %s\n", tests[i], last_word(tests[i]));
+  char* tests[][2] =
+    {
+     {"foldr/file", "/"},
+     {"dir/foldr/file", "/"},
+     {"one#two#three#four", "#"},
+     {"thisandthatandthisandmore", "and"},
+     {"blah.txt", "/"},
+     {"", "hello"},
+     {NULL, "sep"},
+     {"str", NULL},
+     {"end/", "/"},
+     {"/", "/"},
+     {"//", "/"},
+     NULL
+    };
+  for (int i = 0; tests[i] && (tests[i][0] || tests[i][1]); i++) {
+    char* before;
+    const char* after = rsplit(tests[i][0],  tests[i][1], &before);
+    printf("rsplit(%s, %s) -> %s, %s\n", tests[i][0], tests[i][1], before, after);
+    if (i == 0) {
+      after = rsplit(tests[i][0],  tests[i][1], NULL);
+      printf("rsplit(%s, %s, (null)) -> %s\n", tests[i][0], tests[i][1], after);
+    }
+    if (before) free(before);
   }
   exit(0);
 }
