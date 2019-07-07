@@ -7,11 +7,12 @@
 
 #include "builtins.h"
 #include "bookmark.h"
+#include "alias.h"
 #include "utils.h"
 
-const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", NULL};
+const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", NULL};
 
-bool cd(const command cmd) {
+static bool cd(const command cmd) {
   int count = num_args(cmd);
   if (count != 1) {
     sprintf(error_msg, "cd: too %s arguments; there should be exactly 1",
@@ -24,7 +25,7 @@ bool cd(const command cmd) {
   return false;
 }
 
-bool bookmark(const command cmd) {
+static bool bookmark(const command cmd) {
   static const struct option options[] =
     {
      {"save", required_argument, NULL, 's'},
@@ -77,6 +78,7 @@ bool handle_builtin(command cmd, bool* is_builtin) {
   case 2: return cd(cmd); break;
   case 3: return bookmark(cmd); break;
   case 4: printf("%s\n", home_dir); break;
+  case 5: return alias(cmd); break;
   default: *is_builtin = false; break;
   }
   

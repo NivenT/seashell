@@ -75,6 +75,13 @@ const char* rsplit(const char* str, const char* sep, char** before) {
   return str;
 }
 
+char* first_word(const char* str) {
+  if (!str) return NULL;
+  const char* end = str;
+  while (*end && !isspace(*end)) ++end;
+  return strndup(str, end - str);
+}
+
 bool write_all(int fd, const void* buf, size_t count) {
   for (size_t remaining = count; remaining > 0;) {
     int written = write(fd, buf, remaining);

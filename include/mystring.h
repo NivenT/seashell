@@ -3,6 +3,7 @@
 
 #define STRING_CAPACITY_HINT 8
 
+// Should I use this more?
 typedef struct {
   char* cstr; // always malloc'd and still null-terminated
   int len;

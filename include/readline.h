@@ -7,9 +7,9 @@
 
 #define LINENOISE_HISTORY_FILE ".seashell_history"
 
+extern char* history_file;
+
 extern void init_linenoise();
 extern bool read_line(char* line);
-
-extern char* history_file;
 
 #endif // READLINE_H_INCLUDED

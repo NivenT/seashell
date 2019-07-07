@@ -3,7 +3,7 @@
 
 #include "myvec.h"
 
-vec new_vec(int elemsz, int capacity_hint, CleanupElemFn f) {
+vec vec_new(int elemsz, int capacity_hint, CleanupElemFn f) {
   vec ret;
 
   ret.size = 0;

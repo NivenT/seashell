@@ -4,9 +4,7 @@
 
 #include "parser.h"
 
-// TODO: Actually manage memory in this program. There should be many more frees
-
-void free_tkn(void* data) {
+static void free_tkn(void* data) {
   // The vector returned by parse_string does not own the undrlying char*'s
   /*
   if (!data) return;
@@ -15,7 +13,7 @@ void free_tkn(void* data) {
   */
 }
 
-void add_tkn(vec* tkns, string* s) {
+static void add_tkn(vec* tkns, string* s) {
   if (!s || s->len == 0) return;
   token temp;
   
@@ -45,8 +43,7 @@ void add_tkn(vec* tkns, string* s) {
 }
 
 vec parse_string(const char* line) {
-  // gotta love consistent naming conventions
-  vec tkns = new_vec(sizeof(token), 0, free_tkn);
+  vec tkns = vec_new(sizeof(token), 0, free_tkn);
   string curr = string_new(NULL);
   for (int i = 0; line[i]; i++) {
     if (curr.len > 0 && curr.cstr[curr.len-1] == '\\') {

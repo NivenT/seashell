@@ -13,7 +13,7 @@ typedef struct {
   CleanupElemFn f;
 } vec;
 
-extern vec new_vec(int elemsz, int capacity_hint, CleanupElemFn f);
+extern vec vec_new(int elemsz, int capacity_hint, CleanupElemFn f);
 extern void free_vec(vec* v);
 extern int vec_size(vec* v);
 extern void vec_push(vec* v, void* elem);

@@ -13,6 +13,7 @@ extern char* join(const char** beg, const char** end, const char* delim);
 extern char* concat(const char* str1, const char* str2);
 extern char* concat_many(const char** strs); // this is basically join without the delim now that I think about it
 extern const char* rsplit(const char* str, const char* sep, char** before); // only before (if non-NULL) gets malloc'd
+extern char* first_word(const char* str);
 
 // modifies argument
 extern char* trim(char* str);

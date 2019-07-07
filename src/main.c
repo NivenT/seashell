@@ -11,6 +11,7 @@
 #include "parser.h"
 #include "pipeline.h"
 #include "readline.h"
+#include "alias.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
@@ -64,16 +65,21 @@ static void cleanup() {
   if (history_file) free(history_file);
 }
 
-int main(int argc, char *argv[]) {
-  //test_some_func();
-  atexit(cleanup);
-  
-  pid_t seashell_pid = getpid();
+static void init_globals() {
   if ((home_dir = getenv("HOME")) == NULL) {
     home_dir = getpwuid(getuid())->pw_dir;
   }
 
   init_linenoise();
+  init_aliases();
+}
+
+int main(int argc, char *argv[]) {
+  //test_some_func();
+  atexit(cleanup);
+  init_globals();
+  
+  pid_t seashell_pid = getpid();
   while (true) {
     char line[MAX_CMD_LEN];
     command cmd = {0, {0}};
@@ -84,6 +90,7 @@ int main(int argc, char *argv[]) {
     
     CHECK_ERROR(error, read_line(line));
     if (line[0] != '\0') {
+      CHECK_ERROR(error, apply_aliases(line));
       vec tkns = parse_string(line);
       CHECK_ERROR(error, build_pipeline(tkns, &pipe));
       free_vec(&tkns);
