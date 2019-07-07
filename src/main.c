@@ -12,12 +12,11 @@
 #include "pipeline.h"
 #include "readline.h"
 #include "alias.h"
+#include "rcfile.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 /* TODO List (in order):
- * Add alias builtin (e.g. alias ls "ls --color=auto")
- * Execute .seashellrc file at startup (similar to .bashrc)
  * Have tab completion take into account the location of the cursor
  * Add tab completion for commands in /bin/ (and hints as well?)
  * Actually do systems-y things
@@ -26,6 +25,7 @@
  * * add kill builtin
  * * add input/output files
  * Support single quoted strings in input (e.g. 'like this' instead of just "like this")
+ * Support comments in input (e.g. ls # blah)
  */
 
 
@@ -62,7 +62,6 @@ static void test_some_func() {
 }
 
 static void cleanup() {
-  if (history_file) free(history_file);
 }
 
 static void init_globals() {
@@ -74,36 +73,41 @@ static void init_globals() {
   init_aliases();
 }
 
+void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
+  pid_t child_pid = 0;
+  pipeline pipe;
+
+  if (line[0] != '\0') {
+    CHECK_ERROR(error, apply_aliases(line));
+    vec tkns = parse_string(line);
+    CHECK_ERROR(error, build_pipeline(tkns, &pipe));
+    free_vec(&tkns);
+    CHECK_ERROR(error, execute_pipeline(pipe, &child_pid));
+    free_pipeline(&pipe);
+  } else return;
+    
+  if (!error) {
+    if (child_pid != 0) waitpid(child_pid, NULL, 0);
+  } else {
+    printf("ERROR: %s\n", error_msg);
+    if (getpid() != seashell_pid) exit(0xBAD);
+  }
+}
+
 int main(int argc, char *argv[]) {
+  const pid_t seashell_pid = getpid();
+  
   //test_some_func();
   atexit(cleanup);
   init_globals();
+  run_rc_file(seashell_pid);
   
-  pid_t seashell_pid = getpid();
   while (true) {
     char line[MAX_CMD_LEN];
-    command cmd = {0, {0}};
-    pid_t child_pid = 0;
     bool error = false;
-    bool is_builtin = false;
-    pipeline pipe;
     
     CHECK_ERROR(error, read_line(line));
-    if (line[0] != '\0') {
-      CHECK_ERROR(error, apply_aliases(line));
-      vec tkns = parse_string(line);
-      CHECK_ERROR(error, build_pipeline(tkns, &pipe));
-      free_vec(&tkns);
-      CHECK_ERROR(error, execute_pipeline(pipe, &child_pid));
-      free_pipeline(&pipe);
-    } else continue;
-    
-    if (!error) {
-      if (child_pid != 0) waitpid(child_pid, NULL, 0);
-    } else {
-      printf("ERROR: %s\n", error_msg);
-      if (getpid() != seashell_pid) exit(0xBAD);
-    }
+    run_line(line, seashell_pid, error);
   }
   return 0;
 }

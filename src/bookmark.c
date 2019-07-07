@@ -60,7 +60,7 @@ bool list_bookmarks() {
     return true;
   }
   char line[MAX_PTH_LEN]; // TODO: Technically should be bigger
-  for (int l = 1; fgets(line, MAX_CMD_LEN, f); l++) {
+  for (int l = 1; fgets(line, MAX_PTH_LEN, f); l++) {
     printf("%d %s", l, line);
   }
   fclose(f);
