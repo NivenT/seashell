@@ -28,7 +28,8 @@ COMPLETION_FUNC(filenames) {
   char* fldr;
   const char* file = rsplit(word, "/", &fldr);
 
-  DIR* dir = opendir(fldr && *fldr ? fldr : ".");
+  DIR* dir = opendir(!fldr ? "."  :
+		     *fldr ? fldr : "/");
   if (dir) {
     struct dirent* d;
     while ((d = readdir(dir)) != NULL) {
