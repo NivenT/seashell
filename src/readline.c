@@ -24,12 +24,6 @@ static const int white = 37;
 
 char* history_file = NULL;
 
-// This is very sketchy
-// Assumes buf comes from a linenoiseState (see linenoice.c)
-static size_t get_cursor_pos(char** buf) {
-  
-}
-
 COMPLETION_FUNC(filenames) {
   const char* word = last_word(buf);
 
@@ -85,16 +79,45 @@ COMPLETION_FUNC(commands) {
 }
 
 HINTS_FUNC(builtins) {
+  *color = yellow;
+  *bold = 0;
+  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
     int len = strlen(buf);
-    if (len >= 3 && strncmp(builtins[i], buf, len) == 0) {
-      *color = yellow;
-      *bold = 0;
-      linenoiseSetFreeHintsCallback(free);
-      return strdup(builtins[i] + len);
+    if (len >= 2 && strncmp(builtins[i], buf, len) == 0) {
+      if (len < strlen(builtins[i])) {
+	linenoiseSetFreeHintsCallback(free);
+	return strdup(builtins[i] + len);
+      } else switch(i) {
+	case 2: return " <path>";
+	case 5: return " <orig> <new>";
+      }
     }
   }
+  return NULL;
+}
+
+// Not sure how I feel about this
+HINTS_FUNC(commands) {
+  *color = yellow;
+  *bold = 0;
+  
+  char* trimmed = trim(strdup(buf));
+  if (strcmp(trimmed, "grep") == 0) {
+    return " <file> <pattern>";
+  } else if (strcmp(trimmed, "ls") == 0) {
+    return " <path>";
+  } else if (strcmp(trimmed, "git commit") == 0) {
+    return " -am <message>";
+  } else if (strcmp(trimmed, "git clone") == 0) {
+    return " <repository>";
+  } else if (strcmp(trimmed, "bookmark --save") == 0) {
+    return " <path> --name <name>";
+  } else if (strcmp(trimmed, "bookmark --goto") == 0) {
+    return " <name>";
+  }
+  free(trimmed);
   return NULL;
 }
 
@@ -106,8 +129,10 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
 }
 
 static char* hints(const char* buf, int* color, int* bold) {
+  if (!buf) return NULL;
   char* ret = NULL;
   CHECK_HINT(ret, builtins_hints);
+  CHECK_HINT(ret, commands_hints);
   return ret;
 }
 
