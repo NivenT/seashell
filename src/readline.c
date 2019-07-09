@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "readline.h"
 #include "builtins.h"
@@ -22,6 +24,12 @@ static const int white = 37;
 
 char* history_file = NULL;
 
+// This is very sketchy
+// Assumes buf comes from a linenoiseState (see linenoice.c)
+static size_t get_cursor_pos(char** buf) {
+  
+}
+
 COMPLETION_FUNC(filenames) {
   const char* word = last_word(buf);
 
@@ -33,7 +41,7 @@ COMPLETION_FUNC(filenames) {
   if (dir) {
     struct dirent* d;
     while ((d = readdir(dir)) != NULL) {
-      if (strcmp(d->d_name, ".")*strcmp(d->d_name, "..") == 0) continue;
+      if (*d->d_name == '.') continue;
       if (starts_with(d->d_name, file)) {
 	char* full = concat(buf, d->d_name + strlen(file));
 	linenoiseAddCompletion(lc, full);
@@ -49,6 +57,31 @@ COMPLETION_FUNC(builtins) {
   for (int i = 0; builtins[i]; i++) {
     if (starts_with(builtins[i], buf)) linenoiseAddCompletion(lc, builtins[i]);
   }
+}
+
+COMPLETION_FUNC(commands) {
+  char* paths = getenv("PATH");
+  if (!paths) paths = "/bin:/usr/bin";
+
+  paths = strdup(paths); // make a copy since strsep modifies stuff
+  for (char* path = strsep(&paths, ":"); path; path = strsep(&paths, ":")) {
+    DIR* dir = opendir(path);
+    if (dir) {
+      struct dirent* d;
+      while ((d = readdir(dir)) != NULL) {
+	const char* strs[] = {path, "/", d->d_name, NULL};
+	char* full_path = concat_many(strs);
+	
+	struct stat s;
+	if (stat(full_path, &s) == 0 && (s.st_mode & S_IXUSR) && starts_with(d->d_name, buf)) {
+	  linenoiseAddCompletion(lc, d->d_name);
+	}
+	free(full_path);
+      }
+      closedir(dir);
+    }
+  }
+  free(paths);
 }
 
 HINTS_FUNC(builtins) {
@@ -69,6 +102,7 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   if (!buf) return;
   complete_filenames(buf, lc);
   complete_builtins(buf, lc);
+  complete_commands(buf, lc);
 }
 
 static char* hints(const char* buf, int* color, int* bold) {

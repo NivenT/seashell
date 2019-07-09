@@ -17,8 +17,7 @@
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 /* TODO List (in order):
- * Have tab completion take into account the location of the cursor
- * Add tab completion for commands in /bin/ (and hints as well?)
+ * Have tab completion take into account the location of the cursor (jk. This would (will?) require forking linenoise and surfacing this information myself)
  * Actually do systems-y things
  * * add custom signal handlers
  * * add background processes
