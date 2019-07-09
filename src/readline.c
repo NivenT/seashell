@@ -54,11 +54,14 @@ COMPLETION_FUNC(builtins) {
 }
 
 COMPLETION_FUNC(commands) {
+  if (strstr(buf, " ")) return;
+  
   char* paths = getenv("PATH");
   if (!paths) paths = "/bin:/usr/bin";
 
   paths = strdup(paths); // make a copy since strsep modifies stuff
-  for (char* path = strsep(&paths, ":"); path; path = strsep(&paths, ":")) {
+  char* iter = paths;
+  for (char* path = strsep(&iter, ":"); path; path = strsep(&iter, ":")) {
     DIR* dir = opendir(path);
     if (dir) {
       struct dirent* d;
@@ -102,22 +105,29 @@ HINTS_FUNC(builtins) {
 HINTS_FUNC(commands) {
   *color = yellow;
   *bold = 0;
-  
-  char* trimmed = trim(strdup(buf));
+
+  char* copy = strdup(buf);
+  char* trimmed = trim(copy);
   if (strcmp(trimmed, "grep") == 0) {
+    free(copy);
     return " <file> <pattern>";
   } else if (strcmp(trimmed, "ls") == 0) {
+    free(copy);
     return " <path>";
   } else if (strcmp(trimmed, "git commit") == 0) {
+    free(copy);
     return " -am <message>";
   } else if (strcmp(trimmed, "git clone") == 0) {
+    free(copy);
     return " <repository>";
   } else if (strcmp(trimmed, "bookmark --save") == 0) {
+    free(copy);
     return " <path> --name <name>";
   } else if (strcmp(trimmed, "bookmark --goto") == 0) {
+    free(copy);
     return " <name>";
   }
-  free(trimmed);
+  free(copy);
   return NULL;
 }
 
