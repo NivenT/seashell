@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <pwd.h>
 
 #include "utils.h"
@@ -13,6 +14,7 @@
 #include "readline.h"
 #include "alias.h"
 #include "rcfile.h"
+#include "signals.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
@@ -70,6 +72,10 @@ static void init_globals() {
 
   init_linenoise();
   init_aliases();
+  if (!install_signal_handlers()) {
+    printf("Could not install custom signal handlers: %s\n", strerror(errno));
+    exit(0xBAD);
+  }
 }
 
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {

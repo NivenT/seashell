@@ -9,6 +9,7 @@
 #include "bookmark.h"
 #include "alias.h"
 #include "utils.h"
+#include "signals.h"
 
 const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", NULL};
 
@@ -73,6 +74,11 @@ bool handle_builtin(command cmd, bool* is_builtin) {
   }
 
   *is_builtin = true;
+
+  // Possibly excessive, but these are fast so it should be fine
+  // Prevents me from forgetting to block in one of these functions
+  sigset_t prev, block = get_sig_full();
+  sigprocmask(SIG_BLOCK, &block, &prev);
   switch(idx) {
   case 0: case 1: free_cmd(&cmd); exit(0); break;
   case 2: return cd(cmd); break;
@@ -81,6 +87,7 @@ bool handle_builtin(command cmd, bool* is_builtin) {
   case 5: return alias(cmd); break;
   default: *is_builtin = false; break;
   }
+  sigprocmask(SIG_SETMASK, &prev, NULL);
   
   return true;
 }
