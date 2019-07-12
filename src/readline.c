@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <ctype.h>
 
 #include "readline.h"
 #include "builtins.h"
@@ -84,7 +85,7 @@ COMPLETION_FUNC(commands) {
 }
 
 COMPLETION_FUNC(common) {
-  static const char* command_cmds[] =
+  static const char* common_cmds[] =
     {
      "sudo apt-get install",
      "sudo apt-get remove",
@@ -102,9 +103,55 @@ COMPLETION_FUNC(common) {
      "git grep",
      "git checkout -b",
      "git branch",
+     NULL
     };
 
-  // TODO Add completions one word at a time
+  // TODO: Make this code not trash
+  char* inp = strdup(buf);
+  char* tinp = trim(inp);
+
+  int ilen = strlen(tinp);
+  for (int i = 0; common_cmds[i]; ++i) {
+    char* cmd = strdup(common_cmds[i]);
+    int clen = strlen(cmd);
+    
+    int coffset = 0;
+    int ioffset = 0;
+    while (ioffset < ilen && coffset < clen) {
+      char* cword = first_word(cmd + coffset);
+      char* iword = first_word(tinp + ioffset);
+
+      int iwlen = strlen(iword);
+      int iclen = strlen(cword);
+      
+      if (strcmp(cword, iword) != 0) {
+	if (ioffset + iwlen == ilen && starts_with(cword, iword)) {
+	  char* temp = concat(tinp, cword + iwlen);
+	  linenoiseAddCompletion(lc, temp);
+	  free(temp);
+	} else {
+	  free(cword);
+	  free(iword);
+	  break;
+	}
+      }
+
+      coffset += iclen + 1;
+      ioffset += iwlen;
+      
+      free(cword);
+      free(iword);
+
+      iword = tinp + ioffset;
+      while (*iword && isspace(*iword)) {
+	++iword;
+	++ioffset;
+      }
+    }
+    
+    free(cmd);
+  }
+  free(inp);
 }
 
 HINTS_FUNC(builtins) {
