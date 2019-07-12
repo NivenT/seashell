@@ -103,6 +103,7 @@ COMPLETION_FUNC(common) {
      "git grep",
      "git checkout -b",
      "git branch",
+     "git ls-files",
      NULL
     };
 
