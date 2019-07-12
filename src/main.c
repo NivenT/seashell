@@ -19,7 +19,6 @@
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 /* TODO List (in order):
- * Have tab completion take into account the location of the cursor (jk. This would (will?) require forking linenoise and surfacing this information myself)
  * Actually do systems-y things
  * * add custom signal handlers
  * * add background processes
@@ -27,6 +26,11 @@
  * * add input/output files
  * Support single quoted strings in input (e.g. 'like this' instead of just "like this")
  * Support comments in input (e.g. ls # blah)
+ * add history builtin
+ */
+
+/* Maybe do sometime:
+ * Have tab completion take into account the location of the cursor (jk. This would (will?) require forking linenoise and surfacing this information myself)
  */
 
 char error_msg[MAX_ERR_LEN] = {0};
