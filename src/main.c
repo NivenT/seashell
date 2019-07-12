@@ -29,35 +29,15 @@
  * Support comments in input (e.g. ls # blah)
  */
 
-
 char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
 
 static void test_some_func() {
-  char* tests[][2] =
-    {
-     {"foldr/file", "/"},
-     {"dir/foldr/file", "/"},
-     {"one#two#three#four", "#"},
-     {"thisandthatandthisandmore", "and"},
-     {"blah.txt", "/"},
-     {"", "hello"},
-     {NULL, "sep"},
-     {"str", NULL},
-     {"end/", "/"},
-     {"/", "/"},
-     {"//", "/"},
-     NULL
-    };
-  for (int i = 0; tests[i] && (tests[i][0] || tests[i][1]); i++) {
-    char* before;
-    const char* after = rsplit(tests[i][0],  tests[i][1], &before);
-    printf("rsplit(%s, %s) -> %s, %s\n", tests[i][0], tests[i][1], before, after);
-    if (i == 0) {
-      after = rsplit(tests[i][0],  tests[i][1], NULL);
-      printf("rsplit(%s, %s, (null)) -> %s\n", tests[i][0], tests[i][1], after);
-    }
-    if (before) free(before);
+  char* tests[] = {"cd  ", " ls ", "two\t ", ":e ", "as", "  ", "a b ", NULL};
+  for (int i = 0; tests[i]; ++i) {
+    tests[i] = strdup(tests[i]);
+    printf("trim(\"%s\")", tests[i]);
+    printf(" = \"%s\"\n", trim(tests[i]));
   }
   exit(0);
 }
@@ -82,6 +62,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   pid_t child_pid = 0;
   pipeline pipe;
 
+  line = trim(line); // It bothers me that this works
   if (line[0] != '\0') {
     CHECK_ERROR(error, apply_aliases(line));
     vec tkns = parse_string(line);

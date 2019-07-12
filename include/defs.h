@@ -5,6 +5,7 @@
 
 #include "mystring.h"
 #include "myvec.h"
+#include "mymap.h"
 
 #define PROMPT "seashell:%s> "
 

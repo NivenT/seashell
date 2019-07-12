@@ -126,6 +126,8 @@ HINTS_FUNC(commands) {
   } else if (strcmp(trimmed, "bookmark --goto") == 0) {
     free(copy);
     return " <name>";
+  } else if (strcmp(trimmed, "cat") == 0) {
+    return " <file>";
   }
   free(copy);
   return NULL;
@@ -143,6 +145,7 @@ static char* hints(const char* buf, int* color, int* bold) {
   char* ret = NULL;
   CHECK_HINT(ret, builtins_hints);
   CHECK_HINT(ret, commands_hints);
+  if (ret && ends_with(buf, " ") && starts_with(ret, " ")) ret++;
   return ret;
 }
 
