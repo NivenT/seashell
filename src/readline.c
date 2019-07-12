@@ -66,19 +66,45 @@ COMPLETION_FUNC(commands) {
     if (dir) {
       struct dirent* d;
       while ((d = readdir(dir)) != NULL) {
-	const char* strs[] = {path, "/", d->d_name, NULL};
-	char* full_path = concat_many(strs);
-	
-	struct stat s;
-	if (stat(full_path, &s) == 0 && (s.st_mode & S_IXUSR) && starts_with(d->d_name, buf)) {
-	  linenoiseAddCompletion(lc, d->d_name);
+	if (starts_with(d->d_name, buf)) {
+	  const char* strs[] = {path, "/", d->d_name, NULL};
+	  char* full_path = concat_many(strs);
+
+	  struct stat s;
+	  if (stat(full_path, &s) == 0 && (s.st_mode & S_IXUSR)) {
+	    linenoiseAddCompletion(lc, d->d_name);
+	  }
+	  free(full_path);
 	}
-	free(full_path);
       }
       closedir(dir);
     }
   }
   free(paths);
+}
+
+COMPLETION_FUNC(common) {
+  static const char* command_cmds[] =
+    {
+     "sudo apt-get install",
+     "sudo apt-get remove",
+     "apt-cache search",
+     "brew install",
+     "git push origin master",
+     "git remote add origin",
+     "git commit -m",
+     "git pull",
+     "git clone",
+     "git rebase -i",
+     "git diff",
+     "git status",
+     "git add",
+     "git grep",
+     "git checkout -b",
+     "git branch",
+    };
+
+  // TODO Add completions one word at a time
 }
 
 HINTS_FUNC(builtins) {
@@ -108,29 +134,35 @@ HINTS_FUNC(commands) {
 
   char* copy = strdup(buf);
   char* trimmed = trim(copy);
+
+  char* ret = NULL;
   if (strcmp(trimmed, "grep") == 0) {
-    free(copy);
-    return " <file> <pattern>";
+    ret = " <file> <pattern>";
   } else if (strcmp(trimmed, "ls") == 0) {
-    free(copy);
-    return " <path>";
+    ret = " <path>";
   } else if (strcmp(trimmed, "git commit") == 0) {
-    free(copy);
-    return " -am <message>";
+    ret = " -am <message>";
   } else if (strcmp(trimmed, "git clone") == 0) {
-    free(copy);
-    return " <repository>";
+    ret = " <repository>";
   } else if (strcmp(trimmed, "bookmark --save") == 0) {
-    free(copy);
-    return " <path> --name <name>";
+    ret = " <path> --name <name>";
   } else if (strcmp(trimmed, "bookmark --goto") == 0) {
-    free(copy);
-    return " <name>";
+    ret = " <name>";
   } else if (strcmp(trimmed, "cat") == 0) {
-    return " <file>";
+    ret = " <file>";
+  } else if (strcmp(trimmed, "tar -cf") == 0) {
+    ret = " <archive> <files...>";
+  } else if (strcmp(trimmed, "tar -tvf") == 0) {
+    ret = " <archive>";
+  } else if (strcmp(trimmed, "tar -xf") == 0) {
+    ret = " <archive>";
+  } else if (strcmp(trimmed, "emacs -nw") == 0) {
+    ret = " <file>";
+  } else if (strcmp(trimmed, "ssh") == 0) {
+    ret = " <user>@<destination>";
   }
   free(copy);
-  return NULL;
+  return ret;
 }
 
 static void completion(const char* buf, linenoiseCompletions *lc) {
@@ -138,6 +170,7 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   complete_filenames(buf, lc);
   complete_builtins(buf, lc);
   complete_commands(buf, lc);
+  complete_common(buf, lc);
 }
 
 static char* hints(const char* buf, int* color, int* bold) {
