@@ -91,6 +91,7 @@ bool goto_bookmark(const char* name) {
     }
   }
  FUNC_END:
+  fclose(f);
   close(fd);
   return true;
 }
