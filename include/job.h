@@ -6,28 +6,48 @@
 
 #include "defs.h"
 
+typedef struct process process;
+typedef struct job job;
+typedef struct joblist joblist;
 typedef enum {RUNNING, STOPPED, WAITING, TERMINATED} procstate;
 
-// Think of a job as a pipeline and a process as a command
+extern joblist jobs;
+
+// Think of a process as a command
+struct process {
+  pid_t pid;
+  procstate state;
+  char* cmd;
+};
+
+// Think of a job as a pipeline
 struct job {
-  struct process {
-    pid_t pid;
-    procstate state;
-    char* cmd;
-  };
-  
   // job #/id. Couldn't decide which I want to call it
   union {
     size_t num;
     size_t id;
   };
   vec processes;
-  bool foreground;
+  bool fg;
 };
 
 struct joblist {
   size_t next;
   map jobs; // map from job id (int) to job
 };
+
+extern void init_jobs();
+
+extern void job_add_process(job* j, pid_t pid, procstate state, char* cmds);
+extern pid_t job_get_gpid(job* j);
+
+// These all implicitly operate on the global joblist
+extern job* jl_new_job();
+extern job* jl_get_job_by_pid(pid_t pid);
+extern job* jl_get_job_by_id(size_t id);
+extern void jl_update_state(pid_t pid, procstate state);
+extern procstate jl_get_state(pid_t pid);
+extern void jl_print();
+extern void jl_remove_job(size_t id);
 
 #endif // JOB_H_INCLUDED

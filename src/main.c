@@ -15,6 +15,7 @@
 #include "alias.h"
 #include "rcfile.h"
 #include "signals.h"
+#include "job.h"
 #include "tests.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
@@ -51,6 +52,7 @@ static void init_globals() {
     printf("Could not install custom signal handlers: %s\n", strerror(errno));
     exit(0xBAD);
   }
+  init_jobs();
 }
 
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
@@ -78,7 +80,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
   
-  run_tests();
+  //run_tests();
   atexit(cleanup);
   init_globals();
   run_rc_file(seashell_pid);
