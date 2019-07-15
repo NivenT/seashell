@@ -15,6 +15,7 @@
 #include "alias.h"
 #include "rcfile.h"
 #include "signals.h"
+#include "tests.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
@@ -35,16 +36,6 @@
 
 char error_msg[MAX_ERR_LEN] = {0};
 char* home_dir = NULL;
-
-static void test_some_func() {
-  char* tests[] = {"cd  ", " ls ", "two\t ", ":e ", "as", "  ", "a b ", NULL};
-  for (int i = 0; tests[i]; ++i) {
-    tests[i] = strdup(tests[i]);
-    printf("trim(\"%s\")", tests[i]);
-    printf(" = \"%s\"\n", trim(tests[i]));
-  }
-  exit(0);
-}
 
 static void cleanup() {
 }
@@ -87,7 +78,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
   
-  //test_some_func();
+  run_tests();
   atexit(cleanup);
   init_globals();
   run_rc_file(seashell_pid);

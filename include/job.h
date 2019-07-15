@@ -27,7 +27,7 @@ struct job {
 
 struct joblist {
   size_t next;
-  map jobs;
+  map jobs; // map from job id (int) to job
 };
 
 #endif // JOB_H_INCLUDED
