@@ -51,11 +51,11 @@ bool build_pipeline(vec tkns, pipeline* pipe) {
   return true;
 }
 
-bool execute_pipeline(pipeline p, pid_t* last_pid) {
+bool execute_pipeline(pipeline p, pid_t* last_pid, job* j) {
   bool is_builtin = false;
   if (!handle_builtin(p.cmd, &is_builtin)) {
     return false;
-  } else if (!is_builtin) {
+  } else if (!is_builtin) { // Can I make this branch not messy?
     const size_t ncmds = num_cmds(&p);
     const size_t nfds = (ncmds - 1) << 1;
     int fds[nfds]; // I'm surprised this is legal
@@ -89,6 +89,8 @@ bool execute_pipeline(pipeline p, pid_t* last_pid) {
 	sprintf(error_msg, "Could not run command %s: %s", curr->cmd.name, strerror(errno));
 	return false;
       }
+
+      job_add_process(j, *last_pid, RUNNING, command_to_string(curr->cmd));
       curr = curr->next;
     }
 

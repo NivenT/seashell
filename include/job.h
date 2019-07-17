@@ -38,13 +38,16 @@ struct joblist {
 
 extern void init_jobs();
 
+extern char* procstate_to_string(procstate state);
+
 extern void job_add_process(job* j, pid_t pid, procstate state, char* cmds);
 extern pid_t job_get_gpid(job* j);
 
 // These all implicitly operate on the global joblist
-extern job* jl_new_job();
+extern job* jl_new_job(bool fg);
 extern job* jl_get_job_by_pid(pid_t pid);
 extern job* jl_get_job_by_id(size_t id);
+extern process* jl_get_proc(pid_t pid);
 extern void jl_update_state(pid_t pid, procstate state);
 extern procstate jl_get_state(pid_t pid);
 extern void jl_print();

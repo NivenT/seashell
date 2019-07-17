@@ -14,6 +14,7 @@ struct command {
 };
 
 extern int num_args(const command cmd);
+extern char* command_to_string(const command cmd); // mallocs
 extern void free_cmd(command* cmd);
 
 #endif // COMMANDS_H_INCLUDED

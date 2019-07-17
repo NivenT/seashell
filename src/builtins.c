@@ -10,8 +10,9 @@
 #include "alias.h"
 #include "utils.h"
 #include "signals.h"
+#include "job.h"
 
-const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", NULL};
+const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", NULL};
 
 static bool cd(const command cmd) {
   int count = num_args(cmd);
@@ -85,6 +86,7 @@ bool handle_builtin(command cmd, bool* is_builtin) {
   case 3: return bookmark(cmd); break;
   case 4: printf("%s\n", home_dir); break;
   case 5: return alias(cmd); break;
+  case 6: jl_print(); break;
   default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);

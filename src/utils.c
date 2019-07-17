@@ -22,11 +22,16 @@ char* join(const char** beg, const char** end, const char* delim) {
 
   int delim_len = strlen(delim);
   for (const char** ptr = beg; ptr != end; ++ptr) {
-    int new_len = len + delim_len + strlen(*ptr);
+    int new_len = len + strlen(*ptr);
+    new_len += ptr == beg ? 0 : delim_len;
     ret = realloc(ret, new_len + 1);
 
-    if (ptr != beg) strcpy(ret + len, delim);
-    strcpy(ret + len + delim_len, *ptr);
+    if (ptr != beg) {
+      strcpy(ret + len, delim);
+      strcpy(ret + len + delim_len, *ptr);
+    } else {
+      strcpy(ret, *ptr);
+    }
 
     len = new_len;
   }

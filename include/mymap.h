@@ -37,5 +37,6 @@ extern bool map_contains(map* m, void* key);
 extern void map_remove(map* m, void* key);
 extern size_t map_size(map* m);
 extern void free_map(map* m);
+// TODO: Add map_first and map_next for iteration
 
 #endif // MYMAP_H_INCLUDED
