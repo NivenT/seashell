@@ -28,7 +28,6 @@ void run_rc_file(const pid_t seashell_pid) {
     free(rc_file);
     return;
   }
-
   int fd = open(rc_file, O_RDONLY);
   if (fd == -1) return;
   FILE* f = fdopen(fd, "r");

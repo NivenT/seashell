@@ -34,6 +34,7 @@ struct job {
 struct joblist {
   size_t next;
   map jobs; // map from job id (int) to job
+  job* foreground;
 };
 
 extern void init_jobs();
@@ -52,5 +53,6 @@ extern void jl_update_state(pid_t pid, procstate state);
 extern procstate jl_get_state(pid_t pid);
 extern void jl_print();
 extern void jl_remove_job(size_t id);
+extern bool jl_has_fg();
 
 #endif // JOB_H_INCLUDED

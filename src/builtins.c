@@ -75,6 +75,7 @@ bool handle_builtin(command cmd, bool* is_builtin) {
   }
 
   *is_builtin = true;
+  bool ret = true;
 
   // Possibly excessive, but these are fast so it should be fine
   // Prevents me from forgetting to block in one of these functions
@@ -82,14 +83,14 @@ bool handle_builtin(command cmd, bool* is_builtin) {
   sigprocmask(SIG_BLOCK, &block, &prev);
   switch(idx) {
   case 0: case 1: free_cmd(&cmd); exit(0); break;
-  case 2: return cd(cmd); break;
-  case 3: return bookmark(cmd); break;
+  case 2: ret = cd(cmd); break;
+  case 3: ret = bookmark(cmd); break;
   case 4: printf("%s\n", home_dir); break;
-  case 5: return alias(cmd); break;
+  case 5: ret = alias(cmd); break;
   case 6: jl_print(); break;
   default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);
   
-  return true;
+  return ret;
 }

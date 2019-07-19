@@ -1,8 +1,29 @@
 #include <stddef.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "signals.h"
+#include "job.h"
 
 static void handleSIGCHLD(int sig) {
+  int status;
+  while (true) {
+    pid_t pid = waitpid(-1, &status, WNOHANG | WCONTINUED | WUNTRACED);
+    if (pid <= 0) return;
+
+    sigset_t prevmask = block_sig(SIGCHLD); // Is this necessary?
+    if (WIFEXITED(status)) {
+      jl_update_state(pid, TERMINATED);
+    } else if (WIFSTOPPED(status)) {
+      jl_update_state(pid, STOPPED);
+    } else if (WIFCONTINUED(status)) {
+      jl_update_state(pid, RUNNING);
+    } else if (WIFSIGNALED(status)) {
+      jl_update_state(pid, TERMINATED);
+    }
+    unblock_sig(SIGCHLD, prevmask);
+  }
 }
 
 static void handleSIGINT(int sig) {
@@ -23,7 +44,7 @@ static bool install_signal_handler(int signum, void (*sighandler)(int)) {
 bool install_signal_handlers() {
   bool ret = true;
   ret = ret && install_signal_handler(SIGCHLD, handleSIGCHLD);
-  ret = ret && install_signal_handler(SIGINT, handleSIGINT);
+  //ret = ret && install_signal_handler(SIGINT, handleSIGINT);
   ret = ret && install_signal_handler(SIGTSTP, handleSIGTSTP);
   return ret;
 }

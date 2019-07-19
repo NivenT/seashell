@@ -36,7 +36,8 @@ COMPLETION_FUNC(filenames) {
   if (dir) {
     struct dirent* d;
     while ((d = readdir(dir)) != NULL) {
-      if (*d->d_name == '.') continue;
+      //if (*d->d_name == '.') continue;
+      if (strcmp(d->d_name, ".")*strcmp(d->d_name, "..") == 0) continue;
       if (starts_with(d->d_name, file)) {
 	char* full = concat(buf, d->d_name + strlen(file));
 	linenoiseAddCompletion(lc, full);

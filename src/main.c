@@ -22,7 +22,6 @@
 
 /* TODO List (in order):
  * Actually do systems-y things
- * * add custom signal handlers
  * * add background processes
  * * add kill builtin
  * * add input/output files
@@ -60,6 +59,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   pipeline pipe;
   bool is_builtin;
 
+  
   line = trim(line); // It bothers me that this works
   if (line[0] != '\0') {
     CHECK_ERROR(error, apply_aliases(line));
@@ -73,9 +73,11 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     }
     free_pipeline(&pipe);
   } else return;
-    
+  
   if (!error) {
-    if (child_pid != 0) waitpid(child_pid, NULL, 0);
+    sigset_t prevmask = block_sig(SIGCHLD);
+    while (jl_has_fg()) sigsuspend(&prevmask);
+    unblock_sig(SIGCHLD, prevmask);
   } else {
     printf("ERROR: %s\n", error_msg);
     if (getpid() != seashell_pid) exit(0xBAD);

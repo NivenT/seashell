@@ -17,12 +17,15 @@ static void free_process(void* data) {
 
 static void cleanup() {
   free_map(&jobs.jobs);
+  jobs.foreground = NULL;
+  jobs.next = 0;
 }
 
 void init_jobs() {
   jobs.next = 1;
   jobs.jobs = map_int_new(sizeof(job), 0, free_job);
-
+  jobs.foreground = NULL;
+  
   atexit(cleanup);
 }
 
@@ -48,6 +51,8 @@ pid_t job_get_gpid(job* j) {
 }
 
 job* jl_new_job(bool fg) {
+  if (jobs.foreground) return NULL;
+  
   job j;
   j.id = jobs.next;
   j.fg = fg;
@@ -57,7 +62,7 @@ job* jl_new_job(bool fg) {
   job* ret = (job*)map_get(&jobs.jobs, &jobs.next);
   jobs.next++;
 
-  return ret;
+  return fg ? (jobs.foreground = ret) : ret;
 }
 
 job* jl_get_job_by_pid(pid_t pid) {
@@ -95,8 +100,13 @@ process* jl_get_proc(pid_t pid) {
 }
 
 void jl_update_state(pid_t pid, procstate state) {
-  process* proc = jl_get_proc(pid);
-  if (proc) proc->state = state;
+  if (state == TERMINATED) {
+    job* j = jl_get_job_by_pid(pid);
+    if (j) jl_remove_job(j->id);
+  } else {
+    process* proc = jl_get_proc(pid);
+    if (proc) proc->state = state;
+  }
 }
 
 procstate jl_get_sate(pid_t pid) {
@@ -118,6 +128,12 @@ void jl_print() {
 }
 
 void jl_remove_job(size_t id) {
+  job* j = jl_get_job_by_id(id);
+  if (j == jobs.foreground) jobs.foreground = NULL;
   // Is this valid?
-  map_remove(&jobs.jobs, jl_get_job_by_id(id));
+  if (j) map_remove(&jobs.jobs, &j->id);
+}
+
+bool jl_has_fg() {
+  return jobs.foreground != NULL;
 }
