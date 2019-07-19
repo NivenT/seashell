@@ -100,12 +100,18 @@ process* jl_get_proc(pid_t pid) {
 }
 
 void jl_update_state(pid_t pid, procstate state) {
+  job* j = jl_get_job_by_pid(pid);
+  process* proc = jl_get_proc(pid);
   if (state == TERMINATED) {
-    job* j = jl_get_job_by_pid(pid);
     if (j) jl_remove_job(j->id);
   } else {
-    process* proc = jl_get_proc(pid);
     if (proc) proc->state = state;
+    switch(proc->state) {
+    case STOPPED:
+      j->fg = false;
+      jobs.foreground = NULL;
+      break;
+    }
   }
 }
 
@@ -136,4 +142,8 @@ void jl_remove_job(size_t id) {
 
 bool jl_has_fg() {
   return jobs.foreground != NULL;
+}
+
+pid_t jl_fg_gpid() {
+  return jobs.foreground ? job_get_gpid(jobs.foreground) : 0;
 }

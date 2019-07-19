@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 
 #include "signals.h"
 #include "job.h"
@@ -27,9 +28,27 @@ static void handleSIGCHLD(int sig) {
 }
 
 static void handleSIGINT(int sig) {
+  sigset_t prevmask = block_sig(SIGCHLD);
+  if (jl_has_fg()) {
+    pid_t gpid = jl_fg_gpid();
+    kill(-gpid, SIGINT);
+    jl_update_state(gpid, TERMINATED);
+  } else {
+    exit(0);
+  }
+  unblock_sig(SIGCHLD, prevmask);
 }
 
 static void handleSIGTSTP(int sig) {
+  sigset_t prevmask = block_sig(SIGCHLD);
+  if (jl_has_fg()) {
+    pid_t gpid = jl_fg_gpid();
+    kill(-gpid, SIGTSTP);
+    jl_update_state(gpid, STOPPED);
+  } else {
+    exit(0);
+  }
+  unblock_sig(SIGCHLD, prevmask);
 }
 
 // I've never used a function pointer without a typedef before, and I see why
@@ -44,7 +63,7 @@ static bool install_signal_handler(int signum, void (*sighandler)(int)) {
 bool install_signal_handlers() {
   bool ret = true;
   ret = ret && install_signal_handler(SIGCHLD, handleSIGCHLD);
-  //ret = ret && install_signal_handler(SIGINT, handleSIGINT);
+  ret = ret && install_signal_handler(SIGINT, handleSIGINT);
   ret = ret && install_signal_handler(SIGTSTP, handleSIGTSTP);
   return ret;
 }

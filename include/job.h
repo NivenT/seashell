@@ -54,5 +54,6 @@ extern procstate jl_get_state(pid_t pid);
 extern void jl_print();
 extern void jl_remove_job(size_t id);
 extern bool jl_has_fg();
+extern pid_t jl_fg_gpid();
 
 #endif // JOB_H_INCLUDED
