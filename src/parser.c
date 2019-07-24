@@ -6,11 +6,6 @@
 
 static void free_tkn(void* data) {
   // The vector returned by parse_string does not own the undrlying char*'s
-  /*
-  if (!data) return;
-  token* tkn = (token*)data;
-  free_string(&tkn->str);
-  */
 }
 
 static void add_tkn(vec* tkns, string* s) {
@@ -19,6 +14,9 @@ static void add_tkn(vec* tkns, string* s) {
   
   if (s->len == 1 && s->cstr[0] == '|') {
     temp.type = PIPE;
+    free_string(s);
+  } else if (s->len == 1 && s->cstr[0] == '&') {
+    temp.type = AMPERSAND;
     free_string(s);
   } else if (s->len >= 2 && s->cstr[0] == '\"' && s->cstr[s->len-1] == '\"') {
     // (manually) get rid of quotation marks
@@ -59,7 +57,10 @@ vec parse_string(const char* line) {
       } else if (line[i] == '|' && curr.len == 0) {
 	string_push(&curr, line[i]);
 	add_tkn(&tkns, &curr);
-      } else {
+      } else if (line[i] == '&' && curr.len == 0) {
+	string_push(&curr, line[i]);
+	add_tkn(&tkns, &curr);
+      }else {
 	string_push(&curr, line[i]);
       }
     }
@@ -75,6 +76,7 @@ void print_tokens(const token* tkns, int num) {
     case SYMBOL: printf("SYMBOL(%s) ", tkns[i].str.cstr); break;
     case STRING: printf("STRING(%s) ", tkns[i].str.cstr); break;
     case PIPE: printf("PIPE "); break;
+    case AMPERSAND: printf("AMPERSAND "); break;
     }
   }
 }

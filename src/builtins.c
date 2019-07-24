@@ -65,7 +65,10 @@ static bool bookmark(const command cmd) {
   else return true;
 }
 
-bool handle_builtin(command cmd, bool* is_builtin) {
+bool handle_builtin(pipeline* pipe, bool* is_builtin) {
+  if (vec_size(&pipe->cmds) == 0) return true;
+  command cmd = *(command*)vec_get(&pipe->cmds, 0);
+  
   int idx = -1;
   for (int i = 0; builtins[i]; i++) {
     if (strcmp(builtins[i], cmd.name) == 0) {

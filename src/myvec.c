@@ -24,7 +24,7 @@ void free_vec(vec* v) {
   free(v->data);
 }
 
-int vec_size(vec* v) {
+int vec_size(const vec* v) {
   return v ? v->size : 0;
 }
 
@@ -36,6 +36,10 @@ void vec_push(vec* v, void* elem) {
   memcpy(vec_get(v, v->size++), elem, v->elemsz);
 }
 
-void* vec_get(vec* v, int n) {
+void vec_pop(vec* v) {
+  v->size = v->size == 0 ? v->size : v->size - 1;
+}
+
+void* vec_get(const vec* v, int n) {
   return v->data + (v->elemsz * n);
 }
