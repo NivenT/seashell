@@ -56,7 +56,7 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
   return true;
 }
 
-bool execute_pipeline(pipeline p, pid_t* last_pid, job* j) {
+bool execute_pipeline(pipeline p, job* j) {
   const size_t ncmds = num_cmds(&p);
   const size_t nfds = (ncmds - 1) << 1;
   int fds[nfds]; // I'm surprised this is legal
@@ -72,8 +72,8 @@ bool execute_pipeline(pipeline p, pid_t* last_pid, job* j) {
   for (size_t i = 0; i < ncmds; i++) {
     command cmd = *(command*)vec_get(&p.cmds, i);
       
-    *last_pid = fork();
-    if (*last_pid == 0) {
+    pid_t pid = fork();
+    if (pid == 0) {
       if (i > 0) {
 	dup2(fds[(i-1) << 1], STDIN_FILENO);
       }
@@ -87,12 +87,21 @@ bool execute_pipeline(pipeline p, pid_t* last_pid, job* j) {
 	close(fds[j]);
       }
 
+      pid_t gpid = job_get_gpid(j);
+      if (setpgid(pid, gpid == 0 ? getpid() : gpid) != 0) {
+	sprintf(error_msg, "setpgid error (in child): %s", strerror(errno));
+	return false;
+      }
       execvp(cmd.name, (char**)&cmd);
       sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
       return false;
     }
 
-    job_add_process(j, *last_pid, RUNNING, command_to_string(cmd));
+    job_add_process(j, pid, RUNNING, command_to_string(cmd));
+    if (setpgid(pid, job_get_gpid(j)) != 0) {
+      sprintf(error_msg, "setpgid error: %s", strerror(errno));
+      return false;
+    }
   }
 
   for (int j = 0; j < nfds; j++) {

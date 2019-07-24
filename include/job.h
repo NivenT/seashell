@@ -43,6 +43,8 @@ extern char* procstate_to_string(procstate state);
 
 extern void job_add_process(job* j, pid_t pid, procstate state, char* cmds);
 extern pid_t job_get_gpid(job* j);
+extern bool job_is_stopped(job* j);
+extern void job_print(job* j);
 
 // These all implicitly operate on the global joblist
 extern job* jl_new_job(bool fg);
@@ -55,5 +57,6 @@ extern void jl_print();
 extern void jl_remove_job(size_t id);
 extern bool jl_has_fg();
 extern pid_t jl_fg_gpid();
+extern void jl_resume_first_stopped();
 
 #endif // JOB_H_INCLUDED

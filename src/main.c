@@ -55,10 +55,8 @@ static void init_globals() {
 }
 
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
-  pid_t child_pid = 0;
   pipeline pipe;
   bool is_builtin;
-
   
   line = trim(line); // It bothers me that this works
   if (line[0] != '\0') {
@@ -70,7 +68,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     CHECK_ERROR(error, handle_builtin(&pipe, &is_builtin));
     if (!is_builtin) {
       job* j = jl_new_job(pipe.fg);
-      CHECK_ERROR(error, execute_pipeline(pipe, &child_pid, j));
+      CHECK_ERROR(error, execute_pipeline(pipe, j));
     }
     free_pipeline(&pipe);
   } else return;

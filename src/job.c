@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <signal.h>
 #include <stdio.h>
 
 #include "job.h"
@@ -48,6 +49,29 @@ pid_t job_get_gpid(job* j) {
   if (!j) return 0;
   if (vec_size(&j->processes) == 0) return 0;
   return ((process*)vec_get(&j->processes, 0))->pid;
+}
+
+bool job_is_stopped(job* j) {
+  if (!j) return false;
+  int size = vec_size(&j->processes);
+  for (int i = 0; i < size; i++) {
+    process* p = (process*)vec_get(&j->processes, i);
+    if (p->state == STOPPED) return true;
+  }
+  return false;
+}
+
+void job_print(job* j) {
+  printf("[%ld]", j->id);
+  for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
+    process* proc = (process*)vec_get(&j->processes, idx);
+    printf("\t%s\t%s\n", procstate_to_string(proc->state), proc->cmd);
+  }
+}
+
+static void jl_set_foreground(job* j) {
+  jobs.foreground = j;
+  j->fg = true;
 }
 
 job* jl_new_job(bool fg) {
@@ -123,13 +147,7 @@ procstate jl_get_sate(pid_t pid) {
 void jl_print() {
   for (int i = 0; i < jobs.next; ++i) {
     job* j = (job*)map_get(&jobs.jobs, &i);
-    if (j) {
-      printf("[%ld]", j->id);
-      for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
-	process* proc = (process*)vec_get(&j->processes, idx);
-	printf("\t%s\t%s\n", procstate_to_string(proc->state), proc->cmd);
-      }
-    }
+    if (j) job_print(j);
   }
 }
 
@@ -146,4 +164,16 @@ bool jl_has_fg() {
 
 pid_t jl_fg_gpid() {
   return jobs.foreground ? job_get_gpid(jobs.foreground) : 0;
+}
+
+void jl_resume_first_stopped() {
+  for (int i = 0; i < jobs.next; ++i) {
+    job* j = (job*)map_get(&jobs.jobs, &i);
+    if (j && job_is_stopped(j)) {
+      pid_t gpid = job_get_gpid(j);
+      kill(-gpid, SIGCONT);
+      jl_set_foreground(j);
+      return;
+    }
+  }
 }

@@ -12,7 +12,7 @@
 #include "signals.h"
 #include "job.h"
 
-const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", NULL};
+const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", NULL};
 
 static bool cd(const command cmd) {
   int count = num_args(cmd);
@@ -91,6 +91,7 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   case 4: printf("%s\n", home_dir); break;
   case 5: ret = alias(cmd); break;
   case 6: jl_print(); break;
+  case 7: if (!jl_has_fg()) jl_resume_first_stopped(); break;
   default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);

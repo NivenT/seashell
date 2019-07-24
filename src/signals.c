@@ -45,8 +45,6 @@ static void handleSIGTSTP(int sig) {
     pid_t gpid = jl_fg_gpid();
     kill(-gpid, SIGTSTP);
     //jl_update_state(gpid, STOPPED);
-  } else {
-    exit(0);
   }
   unblock_sig(SIGCHLD, prevmask);
 }
