@@ -69,7 +69,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     // Leaks memory when user types in exit/quit
     CHECK_ERROR(error, handle_builtin(&pipe, &is_builtin));
     if (!is_builtin) {
-      job* j = jl_new_job(true);
+      job* j = jl_new_job(pipe.fg);
       CHECK_ERROR(error, execute_pipeline(pipe, &child_pid, j));
     }
     free_pipeline(&pipe);
