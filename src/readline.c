@@ -24,6 +24,18 @@ static const int cyan = 36;
 static const int white = 37;
 
 char* history_file = NULL;
+char* full_buf = NULL;
+
+static void add_completion(linenoiseCompletions* lc, const char* complete) {
+  if (full_buf && *full_buf) {
+    const char* strs[] = {full_buf, "| ", complete, NULL};
+    char* full = concat_many(strs);
+    linenoiseAddCompletion(lc, full);
+    free(full);
+  } else {
+    linenoiseAddCompletion(lc, complete);
+  }
+}
 
 COMPLETION_FUNC(filenames) {
   const char* word = last_word(buf);
@@ -40,7 +52,7 @@ COMPLETION_FUNC(filenames) {
       if (strcmp(d->d_name, ".")*strcmp(d->d_name, "..") == 0) continue;
       if (starts_with(d->d_name, file)) {
 	char* full = concat(buf, d->d_name + strlen(file));
-	linenoiseAddCompletion(lc, full);
+	add_completion(lc, full);
 	free(full);
       }
     }
@@ -51,7 +63,7 @@ COMPLETION_FUNC(filenames) {
 
 COMPLETION_FUNC(builtins) {
   for (int i = 0; builtins[i]; i++) {
-    if (starts_with(builtins[i], buf)) linenoiseAddCompletion(lc, builtins[i]);
+    if (starts_with(builtins[i], buf)) add_completion(lc, builtins[i]);
   }
 }
 
@@ -74,7 +86,7 @@ COMPLETION_FUNC(commands) {
 
 	  struct stat s;
 	  if (stat(full_path, &s) == 0 && (s.st_mode & S_IXUSR)) {
-	    linenoiseAddCompletion(lc, d->d_name);
+	    add_completion(lc, d->d_name);
 	  }
 	  free(full_path);
 	}
@@ -129,7 +141,7 @@ COMPLETION_FUNC(common) {
       if (strcmp(cword, iword) != 0) {
 	if (ioffset + iwlen == ilen && starts_with(cword, iword)) {
 	  char* temp = concat(tinp, cword + iwlen);
-	  linenoiseAddCompletion(lc, temp);
+	  add_completion(lc, temp);
 	  free(temp);
 	} else {
 	  free(cword);
@@ -218,10 +230,15 @@ HINTS_FUNC(commands) {
 
 static void completion(const char* buf, linenoiseCompletions *lc) {
   if (!buf) return;
-  complete_filenames(buf, lc);
-  complete_builtins(buf, lc);
-  complete_commands(buf, lc);
-  complete_common(buf, lc);
+  const char* post_pipe = rsplit(buf, "|", &full_buf);
+  while (*post_pipe && isspace(*post_pipe)) ++post_pipe;
+  
+  complete_filenames(post_pipe, lc);
+  complete_builtins(post_pipe, lc);
+  complete_commands(post_pipe, lc);
+  complete_common(post_pipe, lc);
+
+  free(full_buf);
 }
 
 static char* hints(const char* buf, int* color, int* bold) {

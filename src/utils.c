@@ -39,7 +39,8 @@ char* join(const char** beg, const char** end, const char* delim) {
 }
 
 char* concat(const char* str1, const char* str2) {
-  if (!str1 || !str2) return NULL;
+  if (!str1) return strdup(str2);
+  if (!str2) return strdup(str1);
   int len1 = strlen(str1), len2 = strlen(str2);
 
   char* ret = malloc(len1+len2+1);

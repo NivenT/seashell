@@ -11,8 +11,6 @@ typedef struct job job;
 typedef struct joblist joblist;
 typedef enum {RUNNING, STOPPED, WAITING, TERMINATED} procstate;
 
-extern joblist jobs;
-
 // Think of a process as a command
 struct process {
   pid_t pid;
@@ -47,7 +45,7 @@ extern bool job_is_stopped(job* j);
 extern bool job_is_terminated(job* j);
 extern void job_print(job* j);
 
-// These all implicitly operate on the global joblist
+// These all implicitly operate on a global joblist
 extern job* jl_new_job(bool fg);
 extern job* jl_get_job_by_pid(pid_t pid);
 extern job* jl_get_job_by_id(size_t id);
