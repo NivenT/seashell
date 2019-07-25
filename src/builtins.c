@@ -85,7 +85,7 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   sigset_t prev, block = get_sig_full();
   sigprocmask(SIG_BLOCK, &block, &prev);
   switch(idx) {
-  case 0: case 1: free_cmd(&cmd); exit(0); break;
+  case 0: case 1: free_pipeline(pipe); exit(0); break;
   case 2: ret = cd(cmd); break;
   case 3: ret = bookmark(cmd); break;
   case 4: printf("%s\n", home_dir); break;
