@@ -13,7 +13,7 @@
 
 #define COMPLETION_FUNC(type) static void complete_##type(const char* buf, linenoiseCompletions *lc)
 #define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
-#define CHECK_HINT(succ, hint) if (!succ) { succ = hint(buf, color, bold); }
+#define CHECK_HINT(succ, hint, buf) if (!succ) { succ = hint(buf, color, bold); }
 
 static const int red = 31;
 static const int green = 32;
@@ -190,7 +190,7 @@ HINTS_FUNC(commands) {
   } else if (strcmp(trimmed, "ls") == 0) {
     ret = " <path>";
   } else if (strcmp(trimmed, "git commit") == 0) {
-    ret = " -am <message>";
+    ret = " -m <message>";
   } else if (strcmp(trimmed, "git clone") == 0) {
     ret = " <repository>";
   } else if (strcmp(trimmed, "bookmark --save") == 0) {
@@ -209,6 +209,8 @@ HINTS_FUNC(commands) {
     ret = " <file>";
   } else if (strcmp(trimmed, "ssh") == 0) {
     ret = " <user>@<destination>";
+  } else if (strcmp(trimmed, "xargs") == 0) {
+    ret = " <command>";
   }
   free(copy);
   return ret;
@@ -224,10 +226,12 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
 
 static char* hints(const char* buf, int* color, int* bold) {
   if (!buf) return NULL;
+  const char* post_pipe = rsplit(buf, "|", NULL);
+  
   char* ret = NULL;
-  CHECK_HINT(ret, builtins_hints);
-  CHECK_HINT(ret, commands_hints);
-  if (ret && ends_with(buf, " ") && starts_with(ret, " ")) ret++;
+  CHECK_HINT(ret, builtins_hints, post_pipe);
+  CHECK_HINT(ret, commands_hints, post_pipe);
+  while (ret && ends_with(buf, " ") && starts_with(ret, " ")) ret++;
   return ret;
 }
 

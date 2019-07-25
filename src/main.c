@@ -22,7 +22,6 @@
 
 /* TODO List (in order):
  * Actually do systems-y things
- * * add background processes
  * * add kill builtin
  * * add input/output files
  * Support single quoted strings in input (e.g. 'like this' instead of just "like this")

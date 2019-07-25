@@ -44,6 +44,7 @@ extern char* procstate_to_string(procstate state);
 extern void job_add_process(job* j, pid_t pid, procstate state, char* cmds);
 extern pid_t job_get_gpid(job* j);
 extern bool job_is_stopped(job* j);
+extern bool job_is_terminated(job* j);
 extern void job_print(job* j);
 
 // These all implicitly operate on the global joblist

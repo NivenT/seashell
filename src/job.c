@@ -62,6 +62,16 @@ bool job_is_stopped(job* j) {
   return false;
 }
 
+bool job_is_terminated(job* j) {
+  if (!j) return false;
+  int size = vec_size(&j->processes);
+  for (int i = 0; i < size; i++) {
+    process* p = (process*)vec_get(&j->processes, i);
+    if (p->state != TERMINATED) return false;
+  }
+  return true;
+}
+
 void job_print(job* j) {
   printf("[%ld]", j->id);
   for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
@@ -130,15 +140,16 @@ process* jl_get_proc(pid_t pid) {
 void jl_update_state(pid_t pid, procstate state) {
   job* j = jl_get_job_by_pid(pid);
   process* proc = jl_get_proc(pid);
-  if (state == TERMINATED) {
-    if (j) jl_remove_job(j->id);
-  } else {
-    if (proc) proc->state = state;
+  if (j && proc) {
+    proc->state = state;
     switch(proc->state) {
     case STOPPED:
       j->fg = false;
       jobs.foreground = NULL;
       break;
+    }
+    if (job_is_terminated(j)) {
+      jl_remove_job(j->id);
     }
   }
 }
