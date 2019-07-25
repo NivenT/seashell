@@ -86,12 +86,13 @@ bool execute_pipeline(pipeline p, job* j) {
       for (int j = 0; j < nfds; j++) {
 	close(fds[j]);
       }
-
+      /*
       pid_t gpid = job_get_gpid(j);
       if (setpgid(pid, gpid == 0 ? getpid() : gpid) != 0) {
 	sprintf(error_msg, "setpgid error (in child): %s", strerror(errno));
 	return false;
       }
+      */
       execvp(cmd.name, (char**)&cmd);
       sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
       return false;

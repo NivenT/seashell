@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
@@ -72,6 +73,9 @@ void job_print(job* j) {
 static void jl_set_foreground(job* j) {
   jobs.foreground = j;
   j->fg = true;
+  if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
+    //strcpy(error_msg, "Could not transfer control of the terminal to new job");
+  }    
 }
 
 job* jl_new_job(bool fg) {

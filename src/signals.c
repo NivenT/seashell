@@ -32,7 +32,6 @@ static void handleSIGINT(int sig) {
   if (jl_has_fg()) {
     pid_t gpid = jl_fg_gpid();
     kill(-gpid, SIGINT);
-    //jl_update_state(gpid, TERMINATED);
   } else {
     exit(0);
   }
@@ -44,7 +43,6 @@ static void handleSIGTSTP(int sig) {
   if (jl_has_fg()) {
     pid_t gpid = jl_fg_gpid();
     kill(-gpid, SIGTSTP);
-    //jl_update_state(gpid, STOPPED);
   }
   unblock_sig(SIGCHLD, prevmask);
 }

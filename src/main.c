@@ -54,6 +54,32 @@ static void init_globals() {
   init_jobs();
 }
 
+static void wait_for_fg() {
+  sigset_t prevmask = block_sig(SIGCHLD);
+  while (jl_has_fg()) sigsuspend(&prevmask);
+  unblock_sig(SIGCHLD, prevmask);  
+}
+
+static void regain_terminal_control(const pid_t seashell_pid) {
+  sigset_t prevmask = block_sig(SIGTTOU);
+  if (tcsetpgrp(STDIN_FILENO, seashell_pid) != 0) {
+    printf("Error: Could not regain control of the terminal\n");
+  }
+  unblock_sig(SIGTTOU, prevmask);
+}
+
+static bool finish_job_prep(job* j) {
+  if (j->fg) {
+    if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
+      strcpy(error_msg, "Could not transfer control of the terminal to new job");
+      return false;
+    }
+  } else {
+    job_print(j);
+  }
+  return true;
+}
+
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   pipeline pipe;
   bool is_builtin;
@@ -69,14 +95,14 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     if (!is_builtin) {
       job* j = jl_new_job(pipe.fg);
       CHECK_ERROR(error, execute_pipeline(pipe, j));
+      CHECK_ERROR(error, finish_job_prep(j));
     }
     free_pipeline(&pipe);
   } else return;
   
   if (!error) {
-    sigset_t prevmask = block_sig(SIGCHLD);
-    while (jl_has_fg()) sigsuspend(&prevmask);
-    unblock_sig(SIGCHLD, prevmask);
+    wait_for_fg();
+    regain_terminal_control(seashell_pid);
   } else {
     printf("ERROR: %s\n", error_msg);
     if (getpid() != seashell_pid) exit(0xBAD);
@@ -85,7 +111,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
-  
+
   //run_tests();
   atexit(cleanup);
   init_globals();
