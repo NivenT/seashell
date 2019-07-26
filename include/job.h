@@ -56,6 +56,6 @@ extern void jl_print();
 extern void jl_remove_job(size_t id);
 extern bool jl_has_fg();
 extern pid_t jl_fg_gpid();
-extern void jl_resume_first_stopped();
+extern bool jl_resume_first_stopped();
 
 #endif // JOB_H_INCLUDED

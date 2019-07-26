@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "job.h"
 
@@ -181,14 +182,16 @@ pid_t jl_fg_gpid() {
   return jobs.foreground ? job_get_gpid(jobs.foreground) : 0;
 }
 
-void jl_resume_first_stopped() {
+bool jl_resume_first_stopped() {
   for (int i = 0; i < jobs.next; ++i) {
     job* j = (job*)map_get(&jobs.jobs, &i);
     if (j && job_is_stopped(j)) {
       pid_t gpid = job_get_gpid(j);
       kill(-gpid, SIGCONT);
       jl_set_foreground(j);
-      return;
+      return true;
     }
   }
+  strcpy(error_msg, "There is no stopped process");
+  return false;
 }

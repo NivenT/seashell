@@ -12,7 +12,7 @@
 #include "signals.h"
 #include "job.h"
 
-const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", NULL};
+const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill", NULL};
 
 static bool cd(const command cmd) {
   int count = num_args(cmd);
@@ -65,6 +65,65 @@ static bool bookmark(const command cmd) {
   else return true;
 }
 
+static bool mykill(const command cmd) {
+  static const struct option options[] =
+    {
+     {"job", required_argument, NULL, 'j'},
+     {"idx", required_argument, NULL, 'i'},
+     {"pid", required_argument, NULL, 'p'}
+    };
+
+  char** argv = (char**)&cmd;
+  int argc = num_args(cmd) + 1;
+
+  char jobstr[MAX_NUM_LEN] = {0};
+  char idxstr[MAX_NUM_LEN] = {0};
+  char pidstr[MAX_NUM_LEN] = {0};
+  
+  opterr = 0;
+  optind = 1;
+  while(true) {
+    char c = getopt_long(argc, argv, "j:i:p:", options, NULL);
+    if (c == -1) break;
+    if (c == '?') continue;
+
+    switch(c) {
+    case 'j': strcpy(jobstr, optarg); break;
+    case 'i': strcpy(idxstr, optarg); break;
+    case 'p': strcpy(pidstr, optarg); break;
+    }
+  }
+  char* sigstr = argv[argc-1];
+  int sig = 0;
+
+  if (strcmp(sigstr, "SIGCONT") == 0) {
+    sig = SIGCONT;
+  } else if (strcmp(sigstr, "SIGTSTP") == 0) {
+    sig = SIGTSTP;
+  } else if (strcmp(sigstr, "SIGKILL") == 0) {
+    sig = SIGKILL;
+  } else {
+    sprintf(error_msg, "kill: unrecognized signal %s", sigstr);
+    return false;
+  }
+
+  if (pidstr[0]) {
+    pid_t pid = strtoul(pidstr, NULL, 0);
+    process* p = jl_get_proc(pid);
+    if (p) kill(pid, sig);
+  } else if (jobstr[0] && idxstr[0]) {
+    size_t id = strtoul(jobstr, NULL, 0);
+    size_t idx = strtoul(idxstr, NULL, 0);
+    
+    job* j = jl_get_job_by_id(id);
+    if (j && vec_size(&j->processes) > idx) kill(((process*)vec_get(&j->processes, idx))->pid, sig);
+  } else {
+    strcpy(error_msg, "kill usage:\n\tkill --job ID --idx INDEX SIGNAL\n\tkill --pid PID SIGNAL");
+    return false;
+  }
+  return true;
+}
+
 bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   if (vec_size(&pipe->cmds) == 0) return true;
   command cmd = *(command*)vec_get(&pipe->cmds, 0);
@@ -91,7 +150,8 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   case 4: printf("%s\n", home_dir); break;
   case 5: ret = alias(cmd); break;
   case 6: jl_print(); break;
-  case 7: if (!jl_has_fg()) jl_resume_first_stopped(); break;
+  case 7: if (!jl_has_fg()) ret = jl_resume_first_stopped(); break;
+  case 8: ret = mykill(cmd); break;
   default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);

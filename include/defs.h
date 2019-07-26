@@ -11,6 +11,7 @@
 
 #define NOT_IMPLEMENTED(name) printf("%s has not yet been implemented\n", name)
 
+#define MAX_NUM_LEN 32
 #define MAX_PTH_LEN 256
 #define MAX_PROMPT_LEN (MAX_PTH_LEN + 12)
 #define MAX_BM_LINE_LEN (2*MAX_PTH_LEN+1)

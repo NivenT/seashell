@@ -26,7 +26,9 @@ cd | This changes the directory | cd DIRECTORY | `cd path/to/fldr`
 bookmark | This manages a list of directories that you can easily swap between | `bookmark --save DIRECTORY --name NAME` Saves a bookmark to the list<br> `bookmark --goto NAME` Changes directory. `NAME` can be the one given to `--name` or the number printed at the beginning of a line by `--list`<br> `bookmark --list` Lists all the bookmarks | `bookmark --save path/to/fld --name screenplays`
 home | This prints your home directory
 alias | Creates shorthands for commands | `alias SHORTHAND COMMAND` | `alias cntlines "git ls-files \| grep -e c$ -e h$ \| xargs cat \| wc -l"` 
-
+jobs | Lists all currently running jobs | `jobs`
+% | Continues (first) stopped background job | `%`
+kill | Sends signal to specifies processs | `kill --job ID --idx INDEX SIGNAL` <br> `kill --pid PID SIGNAL` | `kill --job 3 --idx 0 SIGCONT`
 
 ## Some Things That Might be Useful to Know
 
