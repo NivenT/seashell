@@ -24,7 +24,8 @@ static void add_tkn(vec* tkns, string* s) {
   } else if (s->len == 1 && s->cstr[0] == '<') {
     temp.type = INFILE;
     free_string(s);
-  } else if (s->len >= 2 && s->cstr[0] == '\"' && s->cstr[s->len-1] == '\"') {
+  } else if (s->len >= 2 && ((s->cstr[0] == '\"' && s->cstr[s->len-1] == '\"') ||
+			     (s->cstr[0] == '\'' && s->cstr[s->len-1] == '\''))) {
     // (manually) get rid of quotation marks
     memmove(s->cstr, s->cstr + 1, s->len - 1);
     s->cstr[s->len-2] = '\0';
@@ -55,6 +56,11 @@ vec parse_string(const char* line) {
     } else if (curr.len > 0 && curr.cstr[0] == '\"') {
       string_push(&curr, line[i]);
       if (line[i] == '\"') {
+	add_tkn(&tkns, &curr);
+      }
+    } else if (curr.len > 0 && curr.cstr[0] == '\'') {
+      string_push(&curr, line[i]);
+      if (line[i] == '\'') {
 	add_tkn(&tkns, &curr);
       }
     } else {
