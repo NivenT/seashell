@@ -21,7 +21,6 @@
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 /* TODO List (in order):
- * Support single quoted strings in input (e.g. 'like this' instead of just "like this")
  * Support comments in input (e.g. ls # blah)
  * add history builtin
  */
