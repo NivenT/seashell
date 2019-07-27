@@ -88,7 +88,6 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     vec tkns = parse_string(line);
     CHECK_ERROR(error, build_pipeline(&tkns, &pipe));
     free_vec(&tkns);
-    // Leaks memory when user types in exit/quit
     CHECK_ERROR(error, handle_builtin(&pipe, &is_builtin));
     if (!is_builtin) {
       job* j = jl_new_job(pipe.fg);
@@ -102,7 +101,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     wait_for_fg();
     regain_terminal_control(seashell_pid);
   } else {
-    printf("ERROR: %s\n", error_msg);
+    dprintf(STDERR_FILENO, "ERROR: %s\n", error_msg);
     if (getpid() != seashell_pid) exit(0xBAD);
   }
 }

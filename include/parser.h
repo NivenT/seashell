@@ -4,7 +4,8 @@
 #include "defs.h"
 
 // Not sure how I feel about this style (e.g. vs what's used in commands.h)
-typedef enum {SYMBOL, STRING, PIPE, AMPERSAND} token_t;
+// EOI is a special "end of input" token used to make the code for build_pipeline slightly nicer
+typedef enum {SYMBOL, STRING, PIPE, AMPERSAND, INFILE, OUTFILE, EOI} token_t;
 typedef struct {
   token_t type;
   string str;

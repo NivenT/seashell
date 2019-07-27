@@ -17,6 +17,7 @@ static void cleanup() {
 
 char* get_bookmark_file() {
   if (!bookmark_file) {
+    // TODO: Replace below with call to concat_many
     int home_len = strlen(home_dir);
     int len = strlen(BOOKMARK_FILE) + home_len + 1;
     
