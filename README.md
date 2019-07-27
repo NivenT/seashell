@@ -1,6 +1,11 @@
 # seashell
 
-This is a shell for linux and os x (mostly only tested on Ubuntu. Mileage may vary). It's early in development, so it's still missing a few basic features (e.g. background processes, a fleshed-out readme, etc.), but those and more are on their way.
+This is a shell for linux and os x (mostly only tested on Ubuntu. Mileage may vary). It has plenty of the features one would expect, such as
+
+* Pipeing (e.g. `cat file | grep key | wc -l`)
+* Input/output files (e.g. `cat < original.txt > copy.txt`)
+* Background processes (e.g. `sleep 100 &`)
+* The ability to stop (by pressing `CTRL+Z`) and continue (`%`) processes 
 
 ## How to Build
 Make sure you have `cmake` on your machine, and then do the following
@@ -32,10 +37,14 @@ kill | Sends signal to specifies processs | `kill --job ID --idx INDEX SIGNAL` <
 
 ## Some Things That Might be Useful to Know
 
-* You can tab complete builtin commands and filenames
-  * Depending on how long its been since I've updated the readme, you may be able to tab complete even more
+* There's decent tab completion, but it's not quite as robust as bash's, for instance.
+  * You can tab complete filenames as well as any programs stored in PATH
+  * builtin commands can also be tab completed
+  * Certain common inputs (e.g. `sudo apt-get install`) can also be tab completed, one word at a time
   * See [readline.c](https://github.com/NivenT/seashell/blob/master/src/readline.c) for the latest information
-* You will get hints (yellow suggestions for finishing your input) when typing in the names of a builtin command
-  * Again, there may also be more hints depending on how long it has been since I last updated the readme.
-* Pipeing works (e.g. `cat file | grep key | wc -l`) but you can't yet write/read output/input from a file
-  * That is, you can't do something like `echo write this to a file > output.txt`
+* You will ocassionally get hints (yellow suggestions for finishing your input). See [readline.c](https://github.com/NivenT/seashell/blob/master/src/readline.c) for complete information.
+  * Builtin commands receive hints
+  * Certain common commands also receive hints
+  * There may also be more hints depending on how long it has been since I last updated the readme.
+* At startup, the program reads in a `.seashellrc` file from your home path and executes every command in it
+  * See [rcfile.c](https://github.com/NivenT/seashell/blob/master/src/rcfile.c) for more details
