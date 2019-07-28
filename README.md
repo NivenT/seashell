@@ -12,6 +12,7 @@ Make sure you have `cmake` on your machine, and then do the following
 ```bash
 git clone https://github.com/NivenT/seashell
 cd seashell
+git submodule update --init --recursive
 mkdir build
 cd build
 cmake ../
