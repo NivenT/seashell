@@ -3,7 +3,7 @@
 
 #if defined(__linux__)
 #define OSLINUX
-#elif defined(__APPLE) && defined(__MACH__)
+#elif defined(__APPLE__) && defined(__MACH__)
 #define OSMAC
 #else
 #define OSUNKNOWN
