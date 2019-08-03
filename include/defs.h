@@ -1,6 +1,14 @@
 #ifndef DEFS_H_INCLUDED
 #define DEFS_H_INCLUDED
 
+#if defined(__linux__)
+#define OSLINUX
+#elif defined(__APPLE) && defined(__MACH__)
+#define OSMAC
+#else
+#define OSUNKNOWN
+#endif
+
 #include <stdbool.h>
 
 #include "mystring.h"

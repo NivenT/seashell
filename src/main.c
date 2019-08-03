@@ -106,6 +106,16 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
 
+  #ifdef OSLINUX
+  printf("Running Linux\n");
+  #endif
+  #ifdef OSMAC
+  printf("Running Mac\n");
+  #endif
+  #ifdef OSUNKNOWN
+  printf("Running strange OS\n");
+  #endif
+  
   //run_tests();
   atexit(cleanup);
   init_globals();
