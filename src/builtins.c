@@ -70,7 +70,8 @@ static bool mykill(const command cmd) {
     {
      {"job", required_argument, NULL, 'j'},
      {"idx", required_argument, NULL, 'i'},
-     {"pid", required_argument, NULL, 'p'}
+     {"pid", required_argument, NULL, 'p'},
+     {"help", no_argument, NULL, 'h'}
     };
 
   char** argv = (char**)&cmd;
@@ -79,11 +80,12 @@ static bool mykill(const command cmd) {
   char jobstr[MAX_NUM_LEN] = {0};
   char idxstr[MAX_NUM_LEN] = {0};
   char pidstr[MAX_NUM_LEN] = {0};
+  bool help = false;
   
   opterr = 0;
   optind = 1;
   while(true) {
-    char c = getopt_long(argc, argv, "j:i:p:", options, NULL);
+    char c = getopt_long(argc, argv, "j:i:p:h", options, NULL);
     if (c == -1) break;
     if (c == '?') continue;
 
@@ -91,8 +93,16 @@ static bool mykill(const command cmd) {
     case 'j': strcpy(jobstr, optarg); break;
     case 'i': strcpy(idxstr, optarg); break;
     case 'p': strcpy(pidstr, optarg); break;
+    case 'h': help = true; break;
     }
   }
+
+  static const char* usage = "kill usage:\n\tkill --job ID --idx INDEX SIGNAL\n\tkill --pid PID SIGNAL";
+  if (help) {
+    printf("%s\n", usage);
+    return true;
+  }
+  
   char* sigstr = argv[argc-1];
   int sig = 0;
 
@@ -118,7 +128,7 @@ static bool mykill(const command cmd) {
     job* j = jl_get_job_by_id(id);
     if (j && vec_size(&j->processes) > idx) kill(((process*)vec_get(&j->processes, idx))->pid, sig);
   } else {
-    strcpy(error_msg, "kill usage:\n\tkill --job ID --idx INDEX SIGNAL\n\tkill --pid PID SIGNAL");
+    strcpy(error_msg, usage);
     return false;
   }
   return true;
