@@ -11,8 +11,13 @@
 extern void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error);
 
 static bool create_rc_file(char* file) {
-  static const char* default_rc_contents =
-    "alias ls \"ls --color=auto\"\nalias ll \"ls --color=auto -alF\"\nalias grep \"grep --color=auto\"";
+  static const char* default_rc_contents = "";
+  #ifdef OSLINUX
+  default_rc_contents = "alias ls \"ls --color=auto\"\nalias ll \"ls --color=auto -alF\"\nalias grep \"grep --color=auto\"";
+  #elif defined(OSMAC)
+  default_rc_contents = "alias ls \"ls -G\"\nalias ll \"ls -GalF\"\nalias grep \"grep --color=auto\"";
+  #endif
+
   int fd = open(file, O_RDWR | O_CREAT | O_APPEND, 0644);
   if (fd == -1) return false;
   bool succ = write_all(fd, default_rc_contents, strlen(default_rc_contents));
