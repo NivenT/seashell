@@ -88,7 +88,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     CHECK_ERROR(error, handle_builtin(&pipe, &is_builtin));
     if (!is_builtin) {
       job* j = jl_new_job(pipe.fg);
-      CHECK_ERROR(error, execute_pipeline(pipe, j));
+      CHECK_ERROR(error, execute_pipeline(&pipe, j));
       CHECK_ERROR(error, finish_job_prep(j));
     }
     free_pipeline(&pipe);
@@ -106,16 +106,6 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
 
-  #ifdef OSLINUX
-  printf("Running Linux\n");
-  #endif
-  #ifdef OSMAC
-  printf("Running Mac\n");
-  #endif
-  #ifdef OSUNKNOWN
-  printf("Running strange OS\n");
-  #endif
-  
   //run_tests();
   atexit(cleanup);
   init_globals();

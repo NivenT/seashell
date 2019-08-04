@@ -89,8 +89,8 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
   return true;
 }
 
-bool execute_pipeline(pipeline p, job* j) {
-  const size_t ncmds = num_cmds(&p);
+bool execute_pipeline(pipeline* p, job* j) {
+  const size_t ncmds = num_cmds(p);
   const size_t nfds = (ncmds - 1) << 1;
   int fds[nfds]; // I'm surprised this is legal
 
@@ -103,17 +103,17 @@ bool execute_pipeline(pipeline p, job* j) {
 
   char* argv[MAX_NUM_ARGS + 2];
   for (size_t i = 0; i < ncmds; i++) {
-    command cmd = *(command*)vec_get(&p.cmds, i);
+    command cmd = *(command*)vec_get(&p->cmds, i);
       
     pid_t pid = fork();
     if (pid == 0) {
       if (i > 0) {
 	// Should I be checking for dup2 errors?
 	dup2(fds[(i-1) << 1], STDIN_FILENO);
-      } else if (p.infile) {
-	int fd = open(p.infile, O_RDONLY);
+      } else if (p->infile) {
+	int fd = open(p->infile, O_RDONLY);
 	if (fd < 0) {
-	  sprintf(error_msg, "Could not open the given input file: %s", p.infile);
+	  sprintf(error_msg, "Could not open the given input file: %s", p->infile);
 	  return false;
 	}
 	dup2(fd, STDIN_FILENO);
@@ -121,10 +121,10 @@ bool execute_pipeline(pipeline p, job* j) {
 
       if (i + 1 < ncmds) {
 	dup2(fds[1+(i << 1)], STDOUT_FILENO);
-      } else if (p.outfile) {
-	int fd = creat(p.outfile, 0644);
+      } else if (p->outfile) {
+	int fd = creat(p->outfile, 0644);
 	if (fd < 0) {
-	  sprintf(error_msg, "Could not create the given output file: %s", p.outfile);
+	  sprintf(error_msg, "Could not create the given output file: %s", p->outfile);
 	  return false;
 	}
 	dup2(fd, STDOUT_FILENO);

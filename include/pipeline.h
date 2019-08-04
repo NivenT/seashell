@@ -14,7 +14,7 @@ struct pipeline {
 };
 
 extern bool build_pipeline(vec* tkns, pipeline* pipe);
-extern bool execute_pipeline(pipeline pipe, job* j);
+extern bool execute_pipeline(pipeline* pipe, job* j);
 extern int num_cmds(const pipeline* pipe);
 extern void free_pipeline(pipeline* pipe);
 extern void print_pipeline(pipeline* pipe);
