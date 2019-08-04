@@ -113,7 +113,8 @@ bool execute_pipeline(pipeline* p, job* j) {
       } else if (p->infile) {
 	int fd = open(p->infile, O_RDONLY);
 	if (fd < 0) {
-	  sprintf(error_msg, "Could not open the given input file: %s", p->infile);
+	  sprintf(error_msg, "Could not open the given input file \"%s\" because %s",
+		  p->infile, strerror(errno));
 	  return false;
 	}
 	dup2(fd, STDIN_FILENO);
@@ -124,7 +125,8 @@ bool execute_pipeline(pipeline* p, job* j) {
       } else if (p->outfile) {
 	int fd = creat(p->outfile, 0644);
 	if (fd < 0) {
-	  sprintf(error_msg, "Could not create the given output file: %s", p->outfile);
+	  sprintf(error_msg, "Could not create the given output file \"%s\" because %s",
+		  p->outfile, strerror(errno));
 	  return false;
 	}
 	dup2(fd, STDOUT_FILENO);
