@@ -25,16 +25,19 @@ static const int white = 37;
 
 char* history_file = NULL;
 char* full_buf = NULL;
+const char* post_cursor = NULL;
 
 static void add_completion(linenoiseCompletions* lc, const char* complete) {
+  char* comp = concat(complete, post_cursor);
   if (full_buf && *full_buf) {
-    const char* strs[] = {full_buf, "| ", complete, NULL};
+    const char* strs[] = {full_buf, "| ", comp, NULL};
     char* full = concat_many(strs);
     linenoiseAddCompletion(lc, full);
     free(full);
   } else {
-    linenoiseAddCompletion(lc, complete);
+    linenoiseAddCompletion(lc, comp);
   }
+  free(comp);
 }
 
 COMPLETION_FUNC(filenames) {
@@ -106,6 +109,10 @@ COMPLETION_FUNC(common) {
      "brew install",
      "git push origin master",
      "git remote add origin",
+     "git remote get-url",
+     "git remote set-url",
+     "git remote rename",
+     "git remote remove",
      "git commit -m",
      "git pull",
      "git clone",
@@ -230,14 +237,21 @@ HINTS_FUNC(commands) {
 
 static void completion(const char* buf, linenoiseCompletions *lc) {
   if (!buf) return;
-  const char* post_pipe = rsplit(buf, "|", &full_buf);
+
+  const char* beg = strndup(buf, lc->cursor - buf);
+  post_cursor = lc->cursor;
+  
+  const char* post_pipe = rsplit(beg, "|", &full_buf);
   while (*post_pipe && isspace(*post_pipe)) ++post_pipe;
   
   complete_filenames(post_pipe, lc);
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);
   complete_common(post_pipe, lc);
-
+  /*
+  printf("\nThe cursor is at positiong %ld pointing to %c\n",
+	 lc->cursor - buf, *lc->cursor);
+  */
   free(full_buf);
 }
 
