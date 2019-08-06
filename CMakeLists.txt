@@ -4,6 +4,9 @@ project(seashell C)
 set(CMAKE_C_STANDARD 11) # Maybe change this...
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+add_library(linenoise linenoise/linenoise.c)
+
 file(GLOB SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.c)
-add_executable(seashell ${SRCS} linenoise/linenoise.c)
+add_executable(seashell ${SRCS})
+target_link_libraries(seashell linenoise)
 target_include_directories(seashell PUBLIC include linenoise/)
