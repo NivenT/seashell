@@ -107,6 +107,8 @@ COMPLETION_FUNC(common) {
      "sudo apt-get remove",
      "apt-cache search",
      "brew install",
+     "cargo build --release",
+     "cargo run --release",
      "git push origin master",
      "git remote add origin",
      "git remote get-url",
@@ -124,6 +126,9 @@ COMPLETION_FUNC(common) {
      "git checkout -b",
      "git branch",
      "git ls-files",
+     "git diff",
+     "git stash",
+     "git merge",
      NULL
     };
 
@@ -212,6 +217,8 @@ HINTS_FUNC(commands) {
     ret = " -m <message>";
   } else if (strcmp(trimmed, "git clone") == 0) {
     ret = " <repository>";
+  } else if (strcmp(trimmed, "git merge") == 0) {
+    ret = " <branch>";
   } else if (strcmp(trimmed, "bookmark --save") == 0) {
     ret = " <path> --name <name>";
   } else if (strcmp(trimmed, "bookmark --goto") == 0) {

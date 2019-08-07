@@ -35,7 +35,10 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
   enum {CMD, ARGS, INPUTFILE, OUTPUTFILE} mode = CMD;
   for (int i = 0; i < size; i++) {
     token* tkn = (token*)vec_get(tkns, i);
-    if (tkn->type == SYMBOL || tkn->type == STRING) {
+    if (tkn->type == COMMENT) {
+      free_string(&tkn->str);
+      continue;
+    } else if (tkn->type == SYMBOL || tkn->type == STRING) {
       switch(mode) {
       case CMD:
 	if (tkn->type == SYMBOL) {
@@ -64,6 +67,7 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
 	break;
       }
     } else {
+      // Should this be a switch instead?
       if (tkn->type == AMPERSAND) {
 	pipe->fg = false;
 	if (i < size - 2) {
