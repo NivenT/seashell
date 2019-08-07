@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include <linenoise.h>
+
 #include "builtins.h"
 #include "bookmark.h"
 #include "alias.h"
@@ -12,7 +14,8 @@
 #include "signals.h"
 #include "job.h"
 
-const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill", NULL};
+const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill",
+			  "history", NULL};
 
 static bool cd(const command cmd) {
   int count = num_args(cmd);
@@ -134,6 +137,16 @@ static bool mykill(const command cmd) {
   return true;
 }
 
+// TODO: Add --search flag
+static bool history(struct command cmd) {
+  const char** hist = linenoiseHistoryGet();
+  int len = linenoiseHistoryGetLen();
+  for (int i = 0; i < len; i++) {
+    printf("%d\t%s\n", i, hist[i]);
+  }
+  return true;
+}
+
 bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   if (vec_size(&pipe->cmds) == 0) return true;
   command cmd = *(command*)vec_get(&pipe->cmds, 0);
@@ -162,6 +175,7 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   case 6: jl_print(); break;
   case 7: if (!jl_has_fg()) ret = jl_resume_first_stopped(); break;
   case 8: ret = mykill(cmd); break;
+  case 9: ret = history(cmd); break;
   default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);

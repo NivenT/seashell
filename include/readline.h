@@ -5,7 +5,8 @@
 
 #include "defs.h"
 
-#define LINENOISE_HISTORY_FILE ".seashell_history"
+#define LINENOISE_HISTORY_FILE    ".seashell_history"
+#define LINENOISE_HISTORY_MAX_LEN 256
 
 extern char* history_file;
 

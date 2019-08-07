@@ -284,7 +284,8 @@ void init_linenoise() {
   const char* temp_strs[] = {home_dir, "/", LINENOISE_HISTORY_FILE, NULL};
   history_file = concat_many(temp_strs);
   atexit(cleanup);
-  
+
+  linenoiseHistorySetMaxLen(LINENOISE_HISTORY_MAX_LEN);
   linenoiseHistoryLoad(history_file);
 }
 
