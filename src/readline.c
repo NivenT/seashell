@@ -238,7 +238,7 @@ HINTS_FUNC(commands) {
 static void completion(const char* buf, linenoiseCompletions *lc) {
   if (!buf) return;
 
-  const char* beg = strndup(buf, lc->cursor - buf);
+  char* beg = strndup(buf, lc->cursor - buf);
   post_cursor = lc->cursor;
   
   const char* post_pipe = rsplit(beg, "|", &full_buf);
@@ -248,11 +248,9 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);
   complete_common(post_pipe, lc);
-  /*
-  printf("\nThe cursor is at positiong %ld pointing to %c\n",
-	 lc->cursor - buf, *lc->cursor);
-  */
+  
   free(full_buf);
+  free(beg);
 }
 
 static char* hints(const char* buf, int* color, int* bold) {
