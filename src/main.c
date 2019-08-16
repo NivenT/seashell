@@ -24,6 +24,7 @@
 /* TODO List (in no particular order):
  * Make pipes and builtins play well together
  * Maybe add && and ||
+ * Add fg builtin for moving a process to the foreground
  * Redirect output from/to other file descriptors
  * * e.g. "cmd 2> /tmp/errors" should redirect stderr (fd 2) to /tmp/errors
  * * e.g. "cmd 2> &1" should redirect stderr to stdout (fd 1)

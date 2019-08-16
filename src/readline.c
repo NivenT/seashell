@@ -180,10 +180,7 @@ COMPLETION_FUNC(common) {
   free(inp);
 }
 
-HINTS_FUNC(builtins) {
-  *color = yellow;
-  *bold = 0;
-  
+HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
     int len = strlen(buf);
@@ -202,9 +199,6 @@ HINTS_FUNC(builtins) {
 
 // Not sure how I feel about this
 HINTS_FUNC(commands) {
-  *color = yellow;
-  *bold = 0;
-
   char* copy = strdup(buf);
   char* trimmed = trim(copy);
 
@@ -268,6 +262,9 @@ static char* hints(const char* buf, int* color, int* bold) {
   CHECK_HINT(ret, builtins_hints, post_pipe);
   CHECK_HINT(ret, commands_hints, post_pipe);
   while (ret && ends_with(buf, " ") && starts_with(ret, " ")) ret++;
+
+  *color = yellow;
+  *bold = 0;
   return ret;
 }
 
