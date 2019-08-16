@@ -50,4 +50,5 @@ history | Prints out all commands stored in the shell's history | `history`
   * There may also be more hints depending on how long it has been since I last updated the readme.
 * At startup, the program reads in a `.seashellrc` file from your home path and executes every command in it
   * See [rcfile.c](https://github.com/NivenT/seashell/blob/master/src/rcfile.c) for more details
+* At the top of [main.c](https://github.com/NivenT/seashell/blob/master/src/main.c), there is a TODO list of the features I'm planning on adding next.
 * The seashell in the icon was stolen from [here](https://pixabay.com/vectors/seashell-shell-ocean-beach-sea-1531572/)

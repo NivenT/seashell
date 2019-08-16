@@ -21,9 +21,19 @@
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
 
-/* TODO List (in order):
+/* TODO List (in no particular order):
  * Make pipes and builtins play well together
  * Maybe add && and ||
+ * Redirect output from/to other file descriptors
+ * * e.g. "cmd 2> /tmp/errors" should redirect stderr (fd 2) to /tmp/errors
+ * * e.g. "cmd 2> &1" should redirect stderr to stdout (fd 1)
+ * Support environment variables
+ * * e.g. "echo $Home"
+ * * e.g. "TZ=Pacific/Samoa date"
+ * Globbing (use glob from glob.h)
+ * * e.g. "wc -c *"
+ * Support ~ for home directory
+ * Support "cd -" to go back to last directory
  */
 
 char error_msg[MAX_ERR_LEN] = {0};
