@@ -16,6 +16,7 @@
 
 const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill",
 			  "history", "fg", "bg", NULL};
+static char prev_dir[MAX_PTH_LEN] = {0};
 
 static bool cd(const command cmd) {
   int count = num_args(cmd);
@@ -25,9 +26,27 @@ static bool cd(const command cmd) {
     return false;
   }
 
-  if (chdir(cmd.args[0]) == 0) return true;
-  sprintf(error_msg, "cd: %s", strerror(errno));
-  return false;
+  char cwd[MAX_PTH_LEN];
+  getcwd(cwd, MAX_PTH_LEN);
+
+  char dest[MAX_PTH_LEN];
+  if (strcmp(cmd.args[0], "-") == 0) {
+    if (!prev_dir[0]) {
+      strcpy(error_msg, "No previous directory set");
+      return false;
+    }
+    strcpy(dest, prev_dir);
+  } else {
+    strcpy(dest, cmd.args[0]);
+  }
+  
+  if (chdir(dest) == 0) {
+    strcpy(prev_dir, cwd);
+    return true;
+  } else {
+    sprintf(error_msg, "cd: %s", strerror(errno));
+    return false;
+  }
 }
 
 static bool bookmark(const command cmd) {
