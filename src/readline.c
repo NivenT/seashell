@@ -191,6 +191,8 @@ HINTS_FUNC(builtins) {
       } else switch(i) {
 	case 2: return " <path>";
 	case 5: return " <orig> <new>";
+	case 8: return " --job <id> --idx <idx> <sig>";
+	case 10: case 11: return " <job_idx>";
       }
     }
   }

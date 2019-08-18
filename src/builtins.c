@@ -15,7 +15,7 @@
 #include "job.h"
 
 const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill",
-			  "history", NULL};
+			  "history", "fg", "bg", NULL};
 
 static bool cd(const command cmd) {
   int count = num_args(cmd);
@@ -137,6 +137,51 @@ static bool mykill(const command cmd) {
   return true;
 }
 
+static bool fbg(const command cmd, bool fg) {
+  static const struct option options[] =
+    {
+     {"help", no_argument, NULL, 'h'}
+    };
+
+  char** argv = (char**)&cmd;
+  int argc = num_args(cmd) + 1;
+
+  char jobstr[MAX_NUM_LEN] = {0};
+  bool help = false;
+  
+  opterr = 0;
+  optind = 1;
+  while(true) {
+    char c = getopt_long(argc, argv, "h", options, NULL);
+    if (c == -1) break;
+    if (c == '?') continue;
+    if (c == 'h') help = true;
+  }
+
+  const char* usage = fg ? "fg usage:\n\tfg JOB_ID\n\tfg --help" :
+                           "bg usage:\n\tbg JOB_ID\n\tbg --help";
+  if (help) {
+    printf("%s\n", usage);
+    return true;
+  }
+
+  strcpy(jobstr, argv[argc-1]);
+  job* j = NULL;
+  if (jobstr[0]) {
+    size_t id = strtoul(jobstr, NULL, 0);
+    j = jl_get_job_by_id(id);
+    if (!j) {
+      sprintf(error_msg, "Could not find job with id %lu", id);
+      return false;
+    }
+  } else {
+    strcpy(error_msg, usage);
+    return false;
+  }
+  return jl_resume(j, fg);
+}
+
+
 // TODO: Add --search flag
 static bool history(struct command cmd) {
   const char** hist = linenoiseHistoryGet();
@@ -176,6 +221,7 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   case 7: if (!jl_has_fg()) ret = jl_resume_first_stopped(); break;
   case 8: ret = mykill(cmd); break;
   case 9: ret = history(cmd); break;
+  case 10: case 11: ret = fbg(cmd, idx == 10); break;
   default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);

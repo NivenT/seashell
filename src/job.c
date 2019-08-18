@@ -81,12 +81,14 @@ void job_print(job* j) {
   }
 }
 
-static void jl_set_foreground(job* j) {
+static bool jl_set_foreground(job* j) {
   jobs.foreground = j;
   j->fg = true;
   if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
-    //strcpy(error_msg, "Could not transfer control of the terminal to new job");
-  }    
+    strcpy(error_msg, "Could not transfer control of the terminal to new job");
+    return false;
+  }
+  return true;
 }
 
 job* jl_new_job(bool fg) {
@@ -186,12 +188,19 @@ bool jl_resume_first_stopped() {
   for (int i = 0; i < jobs.next; ++i) {
     job* j = (job*)map_get(&jobs.jobs, &i);
     if (j && job_is_stopped(j)) {
-      pid_t gpid = job_get_gpid(j);
-      kill(-gpid, SIGCONT);
-      jl_set_foreground(j);
-      return true;
+      return jl_resume(j, true);
     }
   }
   strcpy(error_msg, "There is no stopped process");
   return false;
+}
+
+bool jl_resume(job* j, bool fg) {
+  pid_t gpid = job_get_gpid(j);
+  if (gpid <= 0) {
+    strcpy(error_msg, "Could not get group pid of this job");
+    return false;
+  }
+  kill(-gpid, SIGCONT);
+  return fg ? jl_set_foreground(j) : true;
 }
