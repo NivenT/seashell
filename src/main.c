@@ -32,7 +32,6 @@
  * * e.g. "TZ=Pacific/Samoa date"
  * Globbing (use glob from glob.h)
  * * e.g. "wc -c *"
- * Support ~ for home directory
  */
 
 char error_msg[MAX_ERR_LEN] = {0};

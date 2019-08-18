@@ -27,6 +27,17 @@ void string_push(string* str, char c) {
   str->cstr[str->len] = '\0';
 }
 
+void string_append(string* str, char* s) {
+  if (!s) return;
+  int len = strlen(s);
+  while (str->len + len >= str->cap) {
+    str->cap = str->cap == 0 ? STRING_CAPACITY_HINT : str->cap << 1;
+    str->cstr = realloc(str->cstr, str->cap);
+  }
+  while (*s) str->cstr[str->len++] = *(s++);
+  str->cstr[str->len] = '\0';
+}
+
 void free_string(string* str) {
   if (str) {
     if (str->cstr) free(str->cstr);

@@ -83,6 +83,8 @@ vec parse_string(const char* line) {
       } else if (line[i] == '>' && curr.len == 0) {
 	string_push(&curr, line[i]);
 	add_tkn(&tkns, &curr);
+      } else if (line[i] == '~') {
+	string_append(&curr, home_dir);
       } else {
 	string_push(&curr, line[i]);
       }

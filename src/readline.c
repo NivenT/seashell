@@ -46,8 +46,16 @@ COMPLETION_FUNC(filenames) {
   char* fldr;
   const char* file = rsplit(word, "/", &fldr);
 
+  if (fldr && *fldr == '~') {
+    if (fldr[1] == '\0' || fldr[1] == '/') {
+      char* temp = concat(home_dir, fldr + 1);
+      free(fldr);
+      fldr = temp;
+    }
+  }
+
   DIR* dir = opendir(!fldr ? "."  :
-		     *fldr ? fldr : "/");
+		     !*fldr ? "/" : fldr);
   if (dir) {
     struct dirent* d;
     while ((d = readdir(dir)) != NULL) {
@@ -59,9 +67,9 @@ COMPLETION_FUNC(filenames) {
 	free(full);
       }
     }
-    if (fldr) free(fldr);
     closedir(dir);
   }
+  if (fldr) free(fldr);
 }
 
 COMPLETION_FUNC(builtins) {
