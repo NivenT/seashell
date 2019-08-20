@@ -12,7 +12,8 @@ typedef struct {
 
 extern string string_new(char* str);
 extern void string_push(string* str, char c);
-extern void string_append(string* str, char* s);
+extern void string_append(string* str, const char* s);
+extern void string_appendn(string* str, const char* s, int n);
 extern void free_string(string* str);
 
 #endif // MYSTRING_H_INCLUDED

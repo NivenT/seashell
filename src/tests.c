@@ -1,9 +1,12 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "tests.h"
+#include "utils.h"
 
-void run_tests() {
+static void test_map() {
   map primes = map_int_new(sizeof(size_t), 0, NULL);
   assert(map_size(&primes) == 0);
 
@@ -34,5 +37,31 @@ void run_tests() {
   assert(map_contains(&primes, &keys[4]));
   
   free_map(&primes);
+}
+
+static void test_replace_all() {
+  const char* tests[][4] =
+    {
+     {"this doesn't work", "doesn't", "does", "this does work"},
+     {"make spaces safe", " ", "\\ ", "make\\ spaces\\ safe"},
+     {"redredredred", "red", "blue", "blueblueblueblue"},
+     {NULL, "here", "there", NULL},
+     {"here", NULL, "there", NULL},
+     {"here", "here", NULL, NULL},
+     {"here", "here", "", ""},
+     {"s*t*r*i***n*g****", "*", "", "string"},
+     NULL
+    };
+  for (int i = 0; tests[i] && (tests[i][0] || tests[i][1] || tests[i][2]); i++) {
+    char* new = replace_all(tests[i][0], tests[i][1], tests[i][2]);
+    //printf("replace_all(%s, %s, %s) = %s\n", tests[i][0], tests[i][1], tests[i][2], new);
+    assert(new == tests[i][3] || strcmp(new, tests[i][3]) == 0);
+    if (new) free(new);
+  }
+}
+
+void run_tests() {
+  test_map();
+  test_replace_all();
   exit(0);
 }

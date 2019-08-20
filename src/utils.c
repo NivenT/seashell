@@ -88,6 +88,26 @@ char* first_word(const char* str) {
   return strndup(str, end - str);
 }
 
+char* replace_all(const char* str, const char* old, const char* new) {
+  if (!str || !old || !new) return NULL;
+  string ret = string_new(NULL);
+
+  int old_len = strlen(old);
+  
+  const char* beg = str;
+  for (const char* it = str; *it; ++it) {
+    if (strncmp(it, old, old_len) == 0) {
+      string_appendn(&ret, beg, it-beg);
+      string_append(&ret, new);
+      it += old_len;
+      beg = it--;
+    }
+  }
+  if (*beg) string_append(&ret, beg);
+
+  return ret.cstr;
+}
+
 bool write_all(int fd, const void* buf, size_t count) {
   for (size_t remaining = count; remaining > 0;) {
     int written = write(fd, buf, remaining);

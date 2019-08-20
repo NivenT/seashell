@@ -27,15 +27,21 @@ char* history_file = NULL;
 char* full_buf = NULL;
 const char* post_cursor = NULL;
 
+static void add_completion_helper(linenoiseCompletions* lc, const char* complete) {
+  char* safe_space = replace_all(complete, " ", "\\ ");
+  linenoiseAddCompletion(lc, safe_space);
+  free(safe_space);
+}
+
 static void add_completion(linenoiseCompletions* lc, const char* complete) {
   char* comp = concat(complete, post_cursor);
   if (full_buf && *full_buf) {
     const char* strs[] = {full_buf, "| ", comp, NULL};
     char* full = concat_many(strs);
-    linenoiseAddCompletion(lc, full);
+    add_completion_helper(lc, full);
     free(full);
   } else {
-    linenoiseAddCompletion(lc, comp);
+    add_completion_helper(lc, comp);
   }
   free(comp);
 }
@@ -109,6 +115,7 @@ COMPLETION_FUNC(commands) {
 }
 
 COMPLETION_FUNC(common) {
+  // Should these be stored in an external .seashell_completions file?
   static const char* common_cmds[] =
     {
      "sudo apt-get install",
@@ -125,18 +132,22 @@ COMPLETION_FUNC(common) {
      "git remote remove",
      "git commit -m",
      "git pull",
-     "git clone",
+     "git clone https://github.com/",
+     "git clone git@github.com:",
      "git rebase -i",
+     "git stash",
      "git diff",
      "git status",
      "git add",
      "git grep",
      "git checkout -b",
-     "git branch",
+     "git branch -D",
      "git ls-files",
      "git diff",
      "git stash",
      "git merge",
+     "git submodule update --recursive --init",
+     "git submodule add",
      NULL
     };
 
@@ -213,13 +224,16 @@ HINTS_FUNC(commands) {
   char* trimmed = trim(copy);
 
   char* ret = NULL;
+  // Should these be stored in an external .seashell_hints file?
   if (strcmp(trimmed, "grep") == 0) {
     ret = " <file> <pattern>";
   } else if (strcmp(trimmed, "ls") == 0) {
     ret = " <path>";
+  } else if (strcmp(trimmed, "rm") == 0) {
+    ret = " [<files...> | -r <folders...>]";
   } else if (strcmp(trimmed, "git commit") == 0) {
     ret = " -m <message>";
-  } else if (strcmp(trimmed, "git clone") == 0) {
+  } else if (strcmp(trimmed, "git clone")*strcmp(trimmed, "git submodule add") == 0) {
     ret = " <repository>";
   } else if (strcmp(trimmed, "git merge") == 0) {
     ret = " <branch>";
@@ -229,6 +243,9 @@ HINTS_FUNC(commands) {
     ret = " <name>";
   } else if (strcmp(trimmed, "cat") == 0) {
     ret = " <file>";
+  } else if (strcmp(trimmed, "tar") == 0) {
+    // Not sure how I feel about this
+    ret = " [-cf (compress) | -tvf (list) | -xf (extract)]";
   } else if (strcmp(trimmed, "tar -cf") == 0) {
     ret = " <archive> <files...>";
   } else if (strcmp(trimmed, "tar -tvf") == 0) {
