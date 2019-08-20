@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <glob.h>
+#include <stdlib.h>
 
 #include "parser.h"
 
 static void free_tkn(void* data) {
   // The vector returned by parse_string does not own the undrlying char*'s
+}
+
+static void glob_tkns(vec* tkns, const char* patt) {
+  glob_t g;
+  glob(patt, GLOB_NOCHECK | GLOB_BRACE | GLOB_NOMAGIC | GLOB_TILDE, NULL, &g);
+  for (int i = 0; i < g.gl_pathc; i++) {
+    token t = {SYMBOL, string_new(g.gl_pathv[i])};
+    vec_push(tkns, &t);
+  }
+  globfree(&g);
 }
 
 static void add_tkn(vec* tkns, string* s) {
@@ -42,8 +54,10 @@ static void add_tkn(vec* tkns, string* s) {
     temp.type = SYMBOL;
     temp.str = *s;
   } else {
-    temp.type = SYMBOL;
-    temp.str = *s;
+    glob_tkns(tkns, s->cstr);
+    free_string(s);
+    *s = string_new(NULL);
+    return;
   }
   
   vec_push(tkns, &temp);
@@ -83,8 +97,6 @@ vec parse_string(const char* line) {
       } else if (line[i] == '>' && curr.len == 0) {
 	string_push(&curr, line[i]);
 	add_tkn(&tkns, &curr);
-      } else if (line[i] == '~') {
-	string_append(&curr, home_dir);
       } else {
 	string_push(&curr, line[i]);
       }

@@ -27,21 +27,23 @@ char* history_file = NULL;
 char* full_buf = NULL;
 const char* post_cursor = NULL;
 
+/*
 static void add_completion_helper(linenoiseCompletions* lc, const char* complete) {
   char* safe_space = replace_all(complete, " ", "\\ ");
   linenoiseAddCompletion(lc, safe_space);
   free(safe_space);
 }
+*/
 
 static void add_completion(linenoiseCompletions* lc, const char* complete) {
   char* comp = concat(complete, post_cursor);
   if (full_buf && *full_buf) {
     const char* strs[] = {full_buf, "| ", comp, NULL};
     char* full = concat_many(strs);
-    add_completion_helper(lc, full);
+    linenoiseAddCompletion(lc, full);
     free(full);
   } else {
-    add_completion_helper(lc, comp);
+    linenoiseAddCompletion(lc, comp);
   }
   free(comp);
 }
@@ -65,12 +67,13 @@ COMPLETION_FUNC(filenames) {
   if (dir) {
     struct dirent* d;
     while ((d = readdir(dir)) != NULL) {
-      //if (*d->d_name == '.') continue;
       if (strcmp(d->d_name, ".")*strcmp(d->d_name, "..") == 0) continue;
       if (starts_with(d->d_name, file)) {
-	char* full = concat(buf, d->d_name + strlen(file));
+	char* safe = replace_all(d->d_name + strlen(file), " ", "\\ ");
+	char* full = concat(buf, safe);
 	add_completion(lc, full);
 	free(full);
+	free(safe);
       }
     }
     closedir(dir);

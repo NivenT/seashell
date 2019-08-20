@@ -23,10 +23,10 @@
 #define MAX_PTH_LEN 256
 #define MAX_PROMPT_LEN (MAX_PTH_LEN + 12)
 #define MAX_BM_LINE_LEN (2*MAX_PTH_LEN+1)
-#define MAX_CMD_LEN 1024
+#define MAX_CMD_LEN 4096
 #define MAX_ERR_LEN 256
 #define MAX_CMD_NAME_LEN 64
-#define MAX_NUM_ARGS 32
+#define MAX_NUM_ARGS 128
 
 extern char error_msg[MAX_ERR_LEN];
 extern char* home_dir;
