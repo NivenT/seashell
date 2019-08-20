@@ -30,8 +30,6 @@
  * Support environment variables
  * * e.g. "echo $Home"
  * * e.g. "TZ=Pacific/Samoa date"
- * Globbing (use glob from glob.h)
- * * e.g. "wc -c *"
  */
 
 char error_msg[MAX_ERR_LEN] = {0};
@@ -88,11 +86,6 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   if (line[0] != '\0') {
     CHECK_ERROR(error, apply_aliases(line));
     vec tkns = parse_string(line);
-    /*
-    print_tokens(tkns.data, vec_size(&tkns));
-    printf("\n");
-    return;
-    */
     CHECK_ERROR(error, build_pipeline(&tkns, &pipe));
     free_vec(&tkns);
     CHECK_ERROR(error, handle_builtin(&pipe, &is_builtin));
