@@ -261,6 +261,8 @@ HINTS_FUNC(commands) {
     ret = " <user>@<destination>";
   } else if (strcmp(trimmed, "xargs") == 0) {
     ret = " <command>";
+  } else if (strcmp(trimmed, "ps") == 0) {
+    ret = " aux";
   }
   free(copy);
   return ret;

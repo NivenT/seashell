@@ -28,7 +28,7 @@
  * * e.g. "cmd 2> /tmp/errors" should redirect stderr (fd 2) to /tmp/errors
  * * e.g. "cmd 2> &1" should redirect stderr to stdout (fd 1)
  * Support environment variables
- * * e.g. "echo $Home"
+ * * e.g. "echo $HOME"
  * * e.g. "TZ=Pacific/Samoa date"
  */
 
