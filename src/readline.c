@@ -139,7 +139,7 @@ COMPLETION_FUNC(common) {
      "git clone git@github.com:",
      "git rebase -i",
      "git stash",
-     "git diff",
+     "git diff --stat",
      "git status",
      "git add",
      "git grep",
@@ -223,46 +223,40 @@ HINTS_FUNC(builtins) {
 
 // Not sure how I feel about this
 HINTS_FUNC(commands) {
+  // Should these be stored in an external .seashell_hints file and have regex support?
+  static char* const hints[][2] =
+    {
+     {"grep", " <file> <pattern>"},
+     {"ls", " <path>"},
+     {"rm", " [<files...> | -r <folders...>]"},
+     {"git commit", " -m <message>"},
+     {"git clone", " <repository>"},
+     {"git submodule add", " <repository>"},
+     {"git merge", " <branch>"},
+     {"git diff --", "stat"},
+     {"bookmark --save", " <path> --name <name>"},
+     {"bookmark --goto", " <name>"},
+     {"cat", " <file>"},
+     {"tar", " [-cf (compress) | -tvf (list) | -xf (extract)]"},
+     {"tar -cf", " <archive> <files...>"},
+     {"tar -tvf", " <archive>"},
+     {"tar -xf", " <archive>"},
+     {"emacs -nw", " <file>"},
+     {"ssh", " <user>@<destination>"},
+     {"xargs", " <command>"},
+     {"ps", " aux"},
+     NULL
+    };
+  
   char* copy = strdup(buf);
   char* trimmed = trim(copy);
 
   char* ret = NULL;
-  // Should these be stored in an external .seashell_hints file?
-  if (strcmp(trimmed, "grep") == 0) {
-    ret = " <file> <pattern>";
-  } else if (strcmp(trimmed, "ls") == 0) {
-    ret = " <path>";
-  } else if (strcmp(trimmed, "rm") == 0) {
-    ret = " [<files...> | -r <folders...>]";
-  } else if (strcmp(trimmed, "git commit") == 0) {
-    ret = " -m <message>";
-  } else if (strcmp(trimmed, "git clone")*strcmp(trimmed, "git submodule add") == 0) {
-    ret = " <repository>";
-  } else if (strcmp(trimmed, "git merge") == 0) {
-    ret = " <branch>";
-  } else if (strcmp(trimmed, "bookmark --save") == 0) {
-    ret = " <path> --name <name>";
-  } else if (strcmp(trimmed, "bookmark --goto") == 0) {
-    ret = " <name>";
-  } else if (strcmp(trimmed, "cat") == 0) {
-    ret = " <file>";
-  } else if (strcmp(trimmed, "tar") == 0) {
-    // Not sure how I feel about this
-    ret = " [-cf (compress) | -tvf (list) | -xf (extract)]";
-  } else if (strcmp(trimmed, "tar -cf") == 0) {
-    ret = " <archive> <files...>";
-  } else if (strcmp(trimmed, "tar -tvf") == 0) {
-    ret = " <archive>";
-  } else if (strcmp(trimmed, "tar -xf") == 0) {
-    ret = " <archive>";
-  } else if (strcmp(trimmed, "emacs -nw") == 0) {
-    ret = " <file>";
-  } else if (strcmp(trimmed, "ssh") == 0) {
-    ret = " <user>@<destination>";
-  } else if (strcmp(trimmed, "xargs") == 0) {
-    ret = " <command>";
-  } else if (strcmp(trimmed, "ps") == 0) {
-    ret = " aux";
+  for (int i = 0; hints[i][0] || hints[i][1]; i++) {
+    if (strcmp(trimmed, hints[i][0]) == 0) {
+      ret = hints[i][1];
+      break;
+    }
   }
   free(copy);
   return ret;
