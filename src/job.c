@@ -38,6 +38,7 @@ char* procstate_to_string(procstate state) {
   case STOPPED: return "STOPPED";
   case WAITING: return "WAITING";
   case TERMINATED: return "TERMINIATED";
+  case BUILTIN: return "BUILTIN";
   }
 }
 
@@ -49,10 +50,15 @@ void job_add_process(job* j, pid_t pid, procstate state, char* cmds) {
 
 pid_t job_get_gpid(job* j) {
   if (!j) return 0;
-  if (vec_size(&j->processes) == 0) return 0;
-  return ((process*)vec_get(&j->processes, 0))->pid;
+  int size = vec_size(&j->processes);
+  for (int i = 0; i < size; i++) {
+    process* p = (process*)vec_get(&j->processes, i);
+    if (p->state != BUILTIN) return p->pid;
+  }
+  return 0;
 }
 
+// TODO: Consolidate the following three into one function
 bool job_is_stopped(job* j) {
   if (!j) return false;
   int size = vec_size(&j->processes);
@@ -69,6 +75,17 @@ bool job_is_terminated(job* j) {
   for (int i = 0; i < size; i++) {
     process* p = (process*)vec_get(&j->processes, i);
     if (p->state != TERMINATED) return false;
+  }
+  return true;
+}
+
+bool job_is_builtin(job* j) {
+  if (!j) return false;
+  int size = vec_size(&j->processes);
+  if (size == 0) return false;
+  for (int i = 0; i < size; i++) {
+    process* p = (process*)vec_get(&j->processes, i);
+    if (p->state != BUILTIN) return false;
   }
   return true;
 }
@@ -140,6 +157,10 @@ process* jl_get_proc(pid_t pid) {
   return NULL;
 }
 
+bool jl_has_job(size_t id) {
+  return map_get(&jobs.jobs, &id) != NULL;
+}
+
 void jl_update_state(pid_t pid, procstate state) {
   job* j = jl_get_job_by_pid(pid);
   process* proc = jl_get_proc(pid);
@@ -159,7 +180,7 @@ void jl_update_state(pid_t pid, procstate state) {
 
 procstate jl_get_sate(pid_t pid) {
   process* proc = jl_get_proc(pid);
-  return proc ? proc->pid : 0;
+  return proc ? proc->state : 0;
 }
 
 void jl_print() {

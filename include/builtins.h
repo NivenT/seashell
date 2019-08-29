@@ -5,6 +5,7 @@
 
 extern const char* builtins[];
 
-extern bool handle_builtin(pipeline* pipe, bool* is_builtin);
+extern bool handle_builtin(command cmd, int idx);
+extern bool is_builtin(const char* name, int* idx);
 
 #endif // BUILTINS_H_INCLUDED

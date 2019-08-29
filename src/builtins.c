@@ -211,19 +211,7 @@ static bool history(struct command cmd) {
   return true;
 }
 
-bool handle_builtin(pipeline* pipe, bool* is_builtin) {
-  if (vec_size(&pipe->cmds) == 0) return true;
-  command cmd = *(command*)vec_get(&pipe->cmds, 0);
-  
-  int idx = -1;
-  for (int i = 0; builtins[i]; i++) {
-    if (strcmp(builtins[i], cmd.name) == 0) {
-      idx = i;
-      break;
-    }
-  }
-
-  *is_builtin = true;
+bool handle_builtin(command cmd, int idx) {
   bool ret = true;
 
   // Possibly excessive, but these are fast so it should be fine
@@ -231,7 +219,7 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   sigset_t prev, block = get_sig_full();
   sigprocmask(SIG_BLOCK, &block, &prev);
   switch(idx) {
-  case 0: case 1: free_pipeline(pipe); exit(0); break;
+  case 0: case 1: free_cmd(&cmd); exit(0); break;
   case 2: ret = cd(cmd); break;
   case 3: ret = bookmark(cmd); break;
   case 4: printf("%s\n", home_dir); break;
@@ -241,9 +229,19 @@ bool handle_builtin(pipeline* pipe, bool* is_builtin) {
   case 8: ret = mykill(cmd); break;
   case 9: ret = history(cmd); break;
   case 10: case 11: ret = fbg(cmd, idx == 10); break;
-  default: *is_builtin = false; break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);
   
   return ret;
+}
+
+bool is_builtin(const char* name, int* idx) {
+  *idx = -1;
+  for (int i = 0; builtins[i]; i++) {
+    if (strcmp(builtins[i], name) == 0) {
+      *idx = i;
+      return true;
+    }
+  }
+  return false;
 }
