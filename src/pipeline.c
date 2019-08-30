@@ -93,6 +93,53 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
   return true;
 }
 
+static bool connect_pipe(pipeline* p, int fds[], int i) {
+  const size_t ncmds = num_cmds(p);
+  if (i > 0) {
+    if (dup2(fds[(i-1) << 1], STDIN_FILENO) < 0) {
+      strcpy(error_msg, "Could not duplicate file descriptor");
+      return false;
+    }
+  } else if (p->infile) {
+    int fd = open(p->infile, O_RDONLY);
+    if (fd < 0) {
+      sprintf(error_msg, "Could not open the given input file \"%s\" because %s",
+	      p->infile, strerror(errno));
+      return false;
+    }
+    if (dup2(fd, STDIN_FILENO) < 0) {
+      strcpy(error_msg, "Could not duplicate file descriptor");
+      return false;
+    }
+  }
+
+  if (i + 1 < ncmds) {
+    if (dup2(fds[1 + (i << 1)], STDOUT_FILENO) < 0) {
+      strcpy(error_msg, "Could not duplicate file descriptor");
+      return false;
+    }
+  } else if (p->outfile) {
+    int fd = creat(p->outfile, 0644);
+    if (fd < 0) {
+      sprintf(error_msg, "Could not create the given output file \"%s\" because %s",
+	      p->outfile, strerror(errno));
+      return false;
+    }
+    if (dup2(fd, STDOUT_FILENO) < 0) {
+      strcpy(error_msg, "Could not duplicate file descriptor");
+      return false;
+    }
+  }
+  return true;
+}
+
+// TODO: Move to utils.{c, h}
+static void closeall(int fds[], int nfds) {
+  for (int j = 0; j < nfds; j++) {
+    if (fds[j] >= 0) close(fds[j]);
+  }
+}
+
 bool execute_pipeline(pipeline* p, job* j) {
   const size_t ncmds = num_cmds(p);
   const size_t nfds = (ncmds - 1) << 1;
@@ -108,68 +155,61 @@ bool execute_pipeline(pipeline* p, job* j) {
   char* argv[MAX_NUM_ARGS + 2];
   for (size_t i = 0; i < ncmds; i++) {
     command cmd = *(command*)vec_get(&p->cmds, i);
-      
-    pid_t pid = fork();
+
+    pid_t pid = 0;
+    int idx;
+
+    if (!is_builtin(cmd.name, &idx)) pid = fork();
     if (pid == 0) {
-      if (i > 0) {
-	// Should I be checking for dup2 errors?
-	dup2(fds[(i-1) << 1], STDIN_FILENO);
-      } else if (p->infile) {
-	int fd = open(p->infile, O_RDONLY);
-	if (fd < 0) {
-	  sprintf(error_msg, "Could not open the given input file \"%s\" because %s",
-		  p->infile, strerror(errno));
+      if (idx == -1) {
+	bool could_connect = connect_pipe(p, fds, i);
+	closeall(fds, nfds);
+	if (!could_connect) return false;
+	execvp(cmd.name, (char**)&cmd);
+	sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
+	return false;
+      } else {
+	int infd = i > 0 ? fds[(i-1) << 1] :
+	           p->infile ? open(p->infile, O_RDONLY) : STDIN_FILENO;
+	int outfd = i + 1 < ncmds ? fds[1 + (i<<1)] :
+	            p->outfile ? creat(p->outfile, 0644) : STDOUT_FILENO;
+	if (infd < 0 || outfd < 0) {
+	  strcpy(error_msg, "Could not setup file descriptors for builtin");
+	  closeall(fds, nfds);
 	  return false;
 	}
-	dup2(fd, STDIN_FILENO);
+	handle_builtin(p, cmd, idx, infd, outfd);
+	pid = getpid();
       }
-
-      if (i + 1 < ncmds) {
-	dup2(fds[1+(i << 1)], STDOUT_FILENO);
-      } else if (p->outfile) {
-	int fd = creat(p->outfile, 0644);
-	if (fd < 0) {
-	  sprintf(error_msg, "Could not create the given output file \"%s\" because %s",
-		  p->outfile, strerror(errno));
-	  return false;
-	}
-	dup2(fd, STDOUT_FILENO);
-      }
-	
-      // TODO: Abstract away into closeall function
-      for (int j = 0; j < nfds; j++) {
-	close(fds[j]);
-      }
-
-      execvp(cmd.name, (char**)&cmd);
-      sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
-      return false;
     }
-
-    job_add_process(j, pid, RUNNING, command_to_string(cmd));
-    if (setpgid(pid, job_get_gpid(j)) != 0) {
-      sprintf(error_msg, "setpgid error: %s", strerror(errno));
-      return false;
+    if (idx == -1) {
+      job_add_process(j, pid, RUNNING, command_to_string(cmd));
+      if (setpgid(pid, job_get_gpid(j)) != 0) {
+	sprintf(error_msg, "setpgid error: %s", strerror(errno));
+	return false;
+      }
+    } else {
+      job_add_process(j, pid, TERMINATED, command_to_string(cmd));
     }
   }
 
-  for (int j = 0; j < nfds; j++) {
-    close(fds[j]);
-  }
+  closeall(fds, nfds);
   return true;
 }
 
 int num_cmds(const pipeline* pipe) {
-  return vec_size(&pipe->cmds);
+  return pipe ? vec_size(&pipe->cmds) : 0;
 }
 
 void free_pipeline(pipeline* pipe) {
+  if (!pipe) return;
   free_vec(&pipe->cmds);
   if (pipe->infile) free(pipe->infile);
   if (pipe->outfile) free(pipe->outfile);
 }
 
 void print_pipeline(pipeline* pipe) {
+  if (!pipe) return;
   int size = vec_size(&pipe->cmds);
   for (int i = 0; i < size; i++) {
     command* cmd = (command*)vec_get(&pipe->cmds, i);

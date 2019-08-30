@@ -58,5 +58,6 @@ extern bool jl_has_fg();
 extern pid_t jl_fg_gpid();
 extern bool jl_resume_first_stopped();
 extern bool jl_resume(job* j, bool fg);
+extern bool jl_has_job(size_t id);
 
 #endif // JOB_H_INCLUDED
