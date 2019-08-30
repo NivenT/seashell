@@ -87,7 +87,7 @@ static bool bookmark(const command cmd) {
   else return true;
 }
 
-static bool mykill(const command cmd) {
+static bool mykill(const command cmd, int outfd) {
   static const struct option options[] =
     {
      {"job", required_argument, NULL, 'j'},
@@ -121,7 +121,7 @@ static bool mykill(const command cmd) {
 
   static const char* usage = "kill usage:\n\tkill --job ID --idx INDEX SIGNAL\n\tkill --pid PID SIGNAL";
   if (help) {
-    printf("%s\n", usage);
+    dprintf(outfd, "%s\n", usage);
     return true;
   }
   
@@ -156,7 +156,7 @@ static bool mykill(const command cmd) {
   return true;
 }
 
-static bool fbg(const command cmd, bool fg) {
+static bool fbg(const command cmd, bool fg, int outfd) {
   static const struct option options[] =
     {
      {"help", no_argument, NULL, 'h'}
@@ -180,7 +180,7 @@ static bool fbg(const command cmd, bool fg) {
   const char* usage = fg ? "fg usage:\n\tfg JOB_ID\n\tfg --help" :
                            "bg usage:\n\tbg JOB_ID\n\tbg --help";
   if (help) {
-    printf("%s\n", usage);
+    dprintf(outfd, "%s\n", usage);
     return true;
   }
 
@@ -202,16 +202,16 @@ static bool fbg(const command cmd, bool fg) {
 
 
 // TODO: Add --search flag
-static bool history(struct command cmd) {
+static bool history(struct command cmd, int outfd) {
   const char** hist = linenoiseHistoryGet();
   int len = linenoiseHistoryGetLen();
   for (int i = 0; i < len; i++) {
-    printf("%d\t%s\n", i, hist[i]);
+    dprintf(outfd, "%d\t%s\n", i, hist[i]);
   }
   return true;
 }
 
-bool handle_builtin(command cmd, int idx) {
+bool handle_builtin(pipeline* pipe, command cmd, int idx, int infd, int outfd) {
   bool ret = true;
 
   // Possibly excessive, but these are fast so it should be fine
@@ -219,16 +219,16 @@ bool handle_builtin(command cmd, int idx) {
   sigset_t prev, block = get_sig_full();
   sigprocmask(SIG_BLOCK, &block, &prev);
   switch(idx) {
-  case 0: case 1: free_cmd(&cmd); exit(0); break;
+  case 0: case 1: free_pipeline(pipe); exit(0); break;
   case 2: ret = cd(cmd); break;
   case 3: ret = bookmark(cmd); break;
-  case 4: printf("%s\n", home_dir); break;
+  case 4: dprintf(outfd, "%s\n", home_dir); break;
   case 5: ret = alias(cmd); break;
   case 6: jl_print(); break;
   case 7: if (!jl_has_fg()) ret = jl_resume_first_stopped(); break;
-  case 8: ret = mykill(cmd); break;
-  case 9: ret = history(cmd); break;
-  case 10: case 11: ret = fbg(cmd, idx == 10); break;
+  case 8: ret = mykill(cmd, outfd); break;
+  case 9: ret = history(cmd, outfd); break;
+  case 10: case 11: ret = fbg(cmd, idx == 10, outfd); break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);
   

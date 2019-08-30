@@ -38,7 +38,6 @@ char* procstate_to_string(procstate state) {
   case STOPPED: return "STOPPED";
   case WAITING: return "WAITING";
   case TERMINATED: return "TERMINIATED";
-  case BUILTIN: return "BUILTIN";
   }
 }
 
@@ -53,7 +52,7 @@ pid_t job_get_gpid(job* j) {
   int size = vec_size(&j->processes);
   for (int i = 0; i < size; i++) {
     process* p = (process*)vec_get(&j->processes, i);
-    if (p->state != BUILTIN) return p->pid;
+    return p->pid;
   }
   return 0;
 }
@@ -70,22 +69,11 @@ bool job_is_stopped(job* j) {
 }
 
 bool job_is_terminated(job* j) {
-  if (!j) return false;
+  if (!j) return true;
   int size = vec_size(&j->processes);
   for (int i = 0; i < size; i++) {
     process* p = (process*)vec_get(&j->processes, i);
     if (p->state != TERMINATED) return false;
-  }
-  return true;
-}
-
-bool job_is_builtin(job* j) {
-  if (!j) return false;
-  int size = vec_size(&j->processes);
-  if (size == 0) return false;
-  for (int i = 0; i < size; i++) {
-    process* p = (process*)vec_get(&j->processes, i);
-    if (p->state != BUILTIN) return false;
   }
   return true;
 }

@@ -145,7 +145,6 @@ bool execute_pipeline(pipeline* p, job* j) {
   const size_t nfds = (ncmds - 1) << 1;
   int fds[nfds]; // I'm surprised this is legal
 
-  printf("Creating fds...\n");
   for (size_t i = 0; i < nfds >> 1; i++) {
     if (pipe(&fds[i << 1]) < 0) {
       strcpy(error_msg, "Could not create a pipe");
@@ -160,29 +159,29 @@ bool execute_pipeline(pipeline* p, job* j) {
     pid_t pid = 0;
     int idx;
 
-    printf("Checking builtin status...\n");
     if (!is_builtin(cmd.name, &idx)) pid = fork();
     if (pid == 0) {
-      printf("Connecting pipe...\n");
-      if (!connect_pipe(p, fds, i)) {
-	closeall(fds, nfds);
-	return false;
-      }
-      printf("This would be weird\n");
       if (idx == -1) {
-	printf("Running external command...\n");
+	bool could_connect = connect_pipe(p, fds, i);
 	closeall(fds, nfds);
+	if (!could_connect) return false;
 	execvp(cmd.name, (char**)&cmd);
 	sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
 	return false;
       } else {
-	printf("Running builtin...\n");
-	handle_builtin(cmd, idx);
+	int infd = i > 0 ? fds[(i-1) << 1] :
+	           p->infile ? open(p->infile, O_RDONLY) : STDIN_FILENO;
+	int outfd = i + 1 < ncmds ? fds[1 + (i<<1)] :
+	            p->outfile ? creat(p->outfile, 0644) : STDOUT_FILENO;
+	if (infd < 0 || outfd < 0) {
+	  strcpy(error_msg, "Could not setup file descriptors for builtin");
+	  closeall(fds, nfds);
+	  return false;
+	}
+	handle_builtin(p, cmd, idx, infd, outfd);
 	pid = getpid();
       }
-      printf("Moving on to next pipe...\n");
     }
-    printf("Updating job...\n");
     if (idx == -1) {
       job_add_process(j, pid, RUNNING, command_to_string(cmd));
       if (setpgid(pid, job_get_gpid(j)) != 0) {
@@ -192,7 +191,6 @@ bool execute_pipeline(pipeline* p, job* j) {
     } else {
       job_add_process(j, pid, TERMINATED, command_to_string(cmd));
     }
-    jl_print();
   }
 
   closeall(fds, nfds);
@@ -200,16 +198,18 @@ bool execute_pipeline(pipeline* p, job* j) {
 }
 
 int num_cmds(const pipeline* pipe) {
-  return vec_size(&pipe->cmds);
+  return pipe ? vec_size(&pipe->cmds) : 0;
 }
 
 void free_pipeline(pipeline* pipe) {
+  if (!pipe) return;
   free_vec(&pipe->cmds);
   if (pipe->infile) free(pipe->infile);
   if (pipe->outfile) free(pipe->outfile);
 }
 
 void print_pipeline(pipeline* pipe) {
+  if (!pipe) return;
   int size = vec_size(&pipe->cmds);
   for (int i = 0; i < size; i++) {
     command* cmd = (command*)vec_get(&pipe->cmds, i);

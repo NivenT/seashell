@@ -84,7 +84,6 @@ static bool finish_job_prep(job* j) {
 
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   pipeline pipe;
-  bool is_builtin;
   
   line = trim(line); // It bothers me that this works
   if (line[0] != '\0') {
@@ -92,23 +91,15 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     vec tkns = parse_string(line);
     CHECK_ERROR(error, build_pipeline(&tkns, &pipe));
     free_vec(&tkns);
-    //CHECK_ERROR(error, handle_builtin(&pipe, &is_builtin));
-    if (!is_builtin) {
-      job* j = jl_new_job(pipe.fg);
-      printf("Executing pipeline...\n");
-      CHECK_ERROR(error, execute_pipeline(&pipe, j));
-      printf("Finishing preparation...\n");
-      CHECK_ERROR(error, finish_job_prep(j));
-    }
+    job* j = jl_new_job(pipe.fg);
+    CHECK_ERROR(error, execute_pipeline(&pipe, j));
+    CHECK_ERROR(error, finish_job_prep(j));
     free_pipeline(&pipe);
   } else return;
   
   if (!error) {
-    printf("Waiting...\n");
     wait_for_fg();
-    printf("Regaining terminal...\n");
     regain_terminal_control(seashell_pid);
-    printf("Finished\n");
   } else {
     dprintf(STDERR_FILENO, "ERROR: %s\n", error_msg);
     if (getpid() != seashell_pid) exit(0xBAD);
