@@ -9,6 +9,11 @@
 // TODO: Have something similar working for brew
 // map from first letter -> vec of apts
 static map apts = { .buckets = NULL };
+// ^^^^^^^^^^^^^^^^^^^^^
+// I chose to store things in a map instead of a vector to make searching through it faster
+// However, when you think about it, "apt-cache search ." is gonna return commands in
+// alphabetical order, so I could have just stored them in a vector and used binary search
+// instead. Oh, well. Too late to change things.
 
 static void cleanup_apts() {
   free_map(&apts);
@@ -57,8 +62,15 @@ void init_apts() {
     free_subprocess(&sp);
   }
   atexit(cleanup_apts);
-
-  
-  
-  exit(0);
+  /*
+  for (void* it = map_first(&apts); it; it = map_next(&apts, it)) {
+    char c = **(char**)it;
+    printf("%c", c);
+    vec* v = (vec*)map_get(&apts, &c);
+    printf(" (%d):\n", v->size);
+    for (void* it2 = vec_first(v); it2; it2 = vec_next(v, it2)) {
+      printf("  %s\n", *(char**)it2);
+    }
+  }
+  */
 }

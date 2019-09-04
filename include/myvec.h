@@ -19,5 +19,7 @@ extern int vec_size(const vec* v);
 extern void vec_push(vec* v, void* elem);
 extern void vec_pop(vec* v);
 extern void* vec_get(const vec* v, int n);
+extern void* vec_first(vec* v);
+extern void* vec_next(vec* v, void* prev);
 
 #endif // MYVEC_H_INCLUDED
