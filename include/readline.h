@@ -8,6 +8,9 @@
 #define LINENOISE_HISTORY_FILE    ".seashell_history"
 #define LINENOISE_HISTORY_MAX_LEN 1024
 
+#define HINTS_MIN_LEN      2
+#define COMPLETION_MIN_LEN 2
+
 extern char* history_file;
 
 extern void init_linenoise();

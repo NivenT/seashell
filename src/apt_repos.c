@@ -62,15 +62,8 @@ void init_apts() {
     free_subprocess(&sp);
   }
   atexit(cleanup_apts);
-  /*
-  for (void* it = map_first(&apts); it; it = map_next(&apts, it)) {
-    char c = **(char**)it;
-    printf("%c", c);
-    vec* v = (vec*)map_get(&apts, &c);
-    printf(" (%d):\n", v->size);
-    for (void* it2 = vec_first(v); it2; it2 = vec_next(v, it2)) {
-      printf("  %s\n", *(char**)it2);
-    }
-  }
-  */
+}
+
+const vec* apts_starting_with(char c) {
+  return (vec*)map_get(&apts, &c);
 }

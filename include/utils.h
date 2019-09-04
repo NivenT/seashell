@@ -6,6 +6,7 @@
 /// I wonder how many of these are implemented as standard c functions that I just don't know about
 
 extern bool starts_with(const char* str, const char* prefix);
+extern bool starts_with_any(const char* str, const char* prefixes[]);
 extern bool ends_with(const char* str, const char* suffix);
 
 // mallocs
