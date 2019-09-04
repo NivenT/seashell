@@ -20,7 +20,7 @@ static bool eq_int(void* lhs, void* rhs) {
 
 static size_t hash_char(void* data) {
   int x = *(char*)data;
-  return hash_int(x);
+  return hash_int(&x);
 }
 
 static bool eq_char(void* lhs, void* rhs) {

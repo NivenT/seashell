@@ -42,6 +42,9 @@ static void init_globals() {
     home_dir = getpwuid(getuid())->pw_dir;
   }
 
+  // Delete
+  init_apts();
+
   init_linenoise();
   init_aliases();
   if (!install_signal_handlers()) {

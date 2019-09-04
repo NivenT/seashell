@@ -45,6 +45,5 @@ void run_rc_file(const pid_t seashell_pid) {
     run_line(line, seashell_pid, false);
   }
   fclose(f);
-  close(fd);
   free(rc_file);
 }
