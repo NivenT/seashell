@@ -130,6 +130,7 @@ COMPLETION_FUNC(common) {
      "curl -sSL -X POST -H \"Content-Type: application/x-www-form-urlencoded\"",
      "curl -sSL -X GET -H \"Content-Type: application/json\"",
      "git push origin master",
+     "git push --set-upstream origin",
      "git remote add origin",
      "git remote get-url",
      "git remote set-url",
@@ -153,6 +154,7 @@ COMPLETION_FUNC(common) {
      "git merge",
      "git submodule update --recursive --init",
      "git submodule add",
+     "git fetch",
      NULL
     };
 

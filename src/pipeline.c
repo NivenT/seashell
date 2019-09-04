@@ -10,6 +10,7 @@
 #include "pipeline.h"
 #include "parser.h"
 #include "builtins.h"
+#include "utils.h"
 
 void clean_cmd(void* addr) {
   free_cmd((command*)addr);
@@ -131,13 +132,6 @@ static bool connect_pipe(pipeline* p, int fds[], int i) {
     }
   }
   return true;
-}
-
-// TODO: Move to utils.{c, h}
-static void closeall(int fds[], int nfds) {
-  for (int j = 0; j < nfds; j++) {
-    if (fds[j] >= 0) close(fds[j]);
-  }
 }
 
 bool execute_pipeline(pipeline* p, job* j) {

@@ -21,9 +21,10 @@ extern char* trim(char* str);
 
 extern const char* last_word(const char* str);
 
+// consistent casing, gotta love it
 extern bool write_all(int fd, const void* buf, size_t count);
+extern void closeall(int fds[], int nfds);
 
 extern int nxtpwr2(int x);
-
 
 #endif // UTILS_H_INCLUDED

@@ -147,3 +147,9 @@ int nxtpwr2(int x) {
   x++;
   return x;
 }
+
+void closeall(int fds[], int nfds) {
+  for (int j = 0; j < nfds; j++) {
+    if (fds[j] >= 0) close(fds[j]);
+  }
+}
