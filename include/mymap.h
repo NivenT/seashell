@@ -30,7 +30,8 @@ typedef struct {
 
 extern map map_new(size_t valsz, size_t keysz, size_t nbuckets, hashfn hash,
 		   equalityfn keyeq, cleanfn cleanval, cleanfn cleankey);
-extern map map_int_new(size_t valsz, size_t nbucketsb, cleanfn cleanval);
+extern map map_int_new(size_t valsz, size_t nbuckets, cleanfn cleanval);
+extern map map_char_new(size_t valsz, size_t nbuckets, cleanfn cleanval);
 extern void* map_get(map* m, void* key);
 extern void map_insert(map* m, void* key, void* val);
 extern bool map_contains(map* m, void* key);

@@ -127,6 +127,8 @@ COMPLETION_FUNC(common) {
      "brew install",
      "cargo build --release",
      "cargo run --release",
+     "curl -sSL -X POST -H \"Content-Type: application/x-www-form-urlencoded\"",
+     "curl -sSL -X GET -H \"Content-Type: application/json\"",
      "git push origin master",
      "git remote add origin",
      "git remote get-url",
@@ -202,6 +204,9 @@ COMPLETION_FUNC(common) {
   free(inp);
 }
 
+COMPLETION_FUNC(apt_cache_search) {
+}
+
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
@@ -245,6 +250,10 @@ HINTS_FUNC(commands) {
      {"ssh", " <user>@<destination>"},
      {"xargs", " <command>"},
      {"ps", " aux"},
+     {"curl", " -sSL -X <method> -H <header> -d <data> -D <response header file> <url>"},
+     {"curl -sSL", " -X <method> -H <header> -d <data> -D <response header file> <url>"},
+     {"curl -sSL -X POST", " -H \"Content-Type: application/x-www-form-urlencoded\" -d <data> -D <response header file> <url>"},
+     {"curl -sSL -X GET", " -H \"Content-Type: application/json\" -D <response header file> <url>"},
      NULL
     };
   
@@ -275,6 +284,7 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);
   complete_common(post_pipe, lc);
+  complete_apt_cache_search(post_pipe, lc);
   
   free(full_buf);
   free(beg);

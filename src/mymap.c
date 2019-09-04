@@ -18,6 +18,15 @@ static bool eq_int(void* lhs, void* rhs) {
   return *(int*)lhs == *(int*)rhs;
 }
 
+static size_t hash_char(void* data) {
+  int x = *(char*)data;
+  return hash_int(x);
+}
+
+static bool eq_char(void* lhs, void* rhs) {
+  return *(char*)lhs == *(char*)rhs;
+}
+
 map map_new(size_t valsz, size_t keysz, size_t nbuckets, hashfn hash,
 	    equalityfn keyeq, cleanfn cleanval, cleanfn cleankey) {
   map ret;
@@ -37,6 +46,10 @@ map map_new(size_t valsz, size_t keysz, size_t nbuckets, hashfn hash,
 
 map map_int_new(size_t valsz, size_t nbuckets, cleanfn cleanval) {
   return map_new(valsz, sizeof(int), nbuckets, hash_int, eq_int, cleanval, NULL);
+}
+
+map map_char_new(size_t valsz, size_t nbuckets, cleanfn cleanval) {
+  return map_new(valsz, sizeof(char), nbuckets, hash_char, eq_char, cleanval, NULL);
 }
 
 void* map_get(map* m, void* key) {

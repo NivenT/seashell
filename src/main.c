@@ -17,12 +17,11 @@
 #include "signals.h"
 #include "job.h"
 #include "tests.h"
+#include "apt_repos.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
-
 /* TODO List (in no particular order):
- * Make pipes and builtins play well together
  * Maybe add && and ||
  * Redirect output from/to other file descriptors
  * * e.g. "cmd 2> /tmp/errors" should redirect stderr (fd 2) to /tmp/errors
@@ -50,6 +49,7 @@ static void init_globals() {
     exit(0xBAD);
   }
   init_jobs();
+  init_apts();
 }
 
 static void wait_for_fg() {
@@ -70,8 +70,7 @@ static bool finish_job_prep(job* j) {
   if (job_is_terminated(j)) {
     jl_remove_job(j->id);
     return true;
-  }
-  if (j->fg) {
+  } else if (j->fg) {
     if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
       strcpy(error_msg, "Could not transfer control of the terminal to new job");
       return false;
