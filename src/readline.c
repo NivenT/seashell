@@ -304,11 +304,12 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   const char* post_pipe = rsplit(beg, "|", &full_buf);
   while (*post_pipe && isspace(*post_pipe)) ++post_pipe;
   
-  complete_filenames(post_pipe, lc);
+  // Order matters (higher priority stuff first)
+  complete_apt_install(post_pipe, lc);
+  complete_common(post_pipe, lc);
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);
-  complete_common(post_pipe, lc);
-  complete_apt_install(post_pipe, lc);
+  complete_filenames(post_pipe, lc);
   
   free(full_buf);
   free(beg);
