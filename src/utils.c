@@ -10,6 +10,13 @@ bool starts_with(const char* str, const char* prefix) {
   return strncmp(str, prefix, len) == 0;
 }
 
+bool starts_with_any(const char* str, const char* prefixes[]) {
+  for (int i = 0; prefixes[i]; ++i) {
+    if (starts_with(str, prefixes[i])) return true;
+  }
+  return false;
+}
+
 bool ends_with(const char* str, const char* suffix) {
   int len = strlen(str);
   int len2 = strlen(suffix);
@@ -146,4 +153,10 @@ int nxtpwr2(int x) {
   x |= x >> 16;
   x++;
   return x;
+}
+
+void closeall(int fds[], int nfds) {
+  for (int j = 0; j < nfds; j++) {
+    if (fds[j] >= 0) close(fds[j]);
+  }
 }

@@ -3,6 +3,8 @@
 
 #include "myvec.h"
 
+// I should maybe stop assuming all these calls to malloc/realloc won't fail at some point
+
 vec vec_new(int elemsz, int capacity_hint, CleanupElemFn f) {
   vec ret;
 
@@ -42,4 +44,13 @@ void vec_pop(vec* v) {
 
 void* vec_get(const vec* v, int n) {
   return v->data + (v->elemsz * n);
+}
+
+void* vec_first(const vec* v) {
+  return v ? v->data : NULL;
+}
+
+void* vec_next(const vec* v, void* prev) {
+  if (prev - v->data >= v->elemsz * (v->size - 1)) return NULL;
+  return v && prev ? prev + v->elemsz : NULL;
 }

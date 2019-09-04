@@ -18,6 +18,15 @@ static bool eq_int(void* lhs, void* rhs) {
   return *(int*)lhs == *(int*)rhs;
 }
 
+static size_t hash_char(void* data) {
+  int x = *(char*)data;
+  return hash_int(&x);
+}
+
+static bool eq_char(void* lhs, void* rhs) {
+  return *(char*)lhs == *(char*)rhs;
+}
+
 map map_new(size_t valsz, size_t keysz, size_t nbuckets, hashfn hash,
 	    equalityfn keyeq, cleanfn cleanval, cleanfn cleankey) {
   map ret;
@@ -37,6 +46,10 @@ map map_new(size_t valsz, size_t keysz, size_t nbuckets, hashfn hash,
 
 map map_int_new(size_t valsz, size_t nbuckets, cleanfn cleanval) {
   return map_new(valsz, sizeof(int), nbuckets, hash_int, eq_int, cleanval, NULL);
+}
+
+map map_char_new(size_t valsz, size_t nbuckets, cleanfn cleanval) {
+  return map_new(valsz, sizeof(char), nbuckets, hash_char, eq_char, cleanval, NULL);
 }
 
 void* map_get(map* m, void* key) {
@@ -103,6 +116,28 @@ void map_remove(map* m, void* key) {
 
 size_t map_size(map* m) {
   return m ? m->size : 0;
+}
+
+static cell* map_nonempty_bucket(map* m, int start) {
+  if (!m) return NULL;
+  for (int i = start; i < m->nbuckets; ++i) {
+    if (m->buckets[i]) return m->buckets[i];
+  }
+  return NULL;
+}
+
+void* map_first(map* m) {
+  cell* c = map_nonempty_bucket(m, 0);
+  return c ? &c->key : NULL;
+}
+
+void* map_next(map* m, void* prev) {
+  cell* c = (cell*)(prev - sizeof(cell*));
+  if (c->next) return &c->next->key;
+  size_t idx = m->hash(c->key)%m->nbuckets + 1;
+  if (idx >= m->nbuckets) return NULL;
+  c = map_nonempty_bucket(m, idx);
+  return c ? &c->key : NULL;
 }
 
 static void free_cell(map* m, cell* c) {

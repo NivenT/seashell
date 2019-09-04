@@ -65,7 +65,6 @@ bool list_bookmarks() {
     printf("%d %s", l, line);
   }
   fclose(f);
-  close(fd);
   return true;
 }
 
@@ -93,7 +92,6 @@ bool goto_bookmark(const char* name) {
   }
  FUNC_END:
   fclose(f);
-  close(fd);
   return true;
 }
 

@@ -10,6 +10,7 @@
 #include "readline.h"
 #include "builtins.h"
 #include "utils.h"
+#include "apt_repos.h"
 
 #define COMPLETION_FUNC(type) static void complete_##type(const char* buf, linenoiseCompletions *lc)
 #define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
@@ -53,7 +54,8 @@ COMPLETION_FUNC(filenames) {
 
   char* fldr;
   const char* file = rsplit(word, "/", &fldr);
-
+  if (strlen(file) < COMPLETION_MIN_LEN) return;
+  
   if (fldr && *fldr == '~') {
     if (fldr[1] == '\0' || fldr[1] == '/') {
       char* temp = concat(home_dir, fldr + 1);
@@ -82,6 +84,7 @@ COMPLETION_FUNC(filenames) {
 }
 
 COMPLETION_FUNC(builtins) {
+  if (strlen(buf) < COMPLETION_MIN_LEN) return;
   for (int i = 0; builtins[i]; i++) {
     if (starts_with(builtins[i], buf)) add_completion(lc, builtins[i]);
   }
@@ -89,6 +92,7 @@ COMPLETION_FUNC(builtins) {
 
 COMPLETION_FUNC(commands) {
   if (strstr(buf, " ")) return;
+  if (strlen(buf) < COMPLETION_MIN_LEN) return;
   
   char* paths = getenv("PATH");
   if (!paths) paths = "/bin:/usr/bin";
@@ -121,13 +125,19 @@ COMPLETION_FUNC(common) {
   // Should these be stored in an external .seashell_completions file?
   static const char* common_cmds[] =
     {
+     "apt install",
+     "apt-get install",
      "sudo apt-get install",
+     "sudo apt install",
      "sudo apt-get remove",
      "apt-cache search",
      "brew install",
      "cargo build --release",
      "cargo run --release",
+     "curl -sSL -X POST -H \"Content-Type: application/x-www-form-urlencoded\"",
+     "curl -sSL -X GET -H \"Content-Type: application/json\"",
      "git push origin master",
+     "git push --set-upstream origin",
      "git remote add origin",
      "git remote get-url",
      "git remote set-url",
@@ -151,6 +161,7 @@ COMPLETION_FUNC(common) {
      "git merge",
      "git submodule update --recursive --init",
      "git submodule add",
+     "git fetch",
      NULL
     };
 
@@ -202,11 +213,29 @@ COMPLETION_FUNC(common) {
   free(inp);
 }
 
+COMPLETION_FUNC(apt_install) {
+  static const char* cmds[] = {"sudo apt install", "apt install", "sudo apt-get install",
+			       "apt-get install", NULL};
+  if (!starts_with_any(buf, cmds)) return;
+  const char* word = last_word(buf);
+  int len = strlen(word);
+  if (!word || len < COMPLETION_MIN_LEN) return;
+  const vec* apts = apts_starting_with(*word);
+  for (void* it = vec_first(apts); it; it = vec_next(apts, it)) {
+    char* apt = *(char**)it;
+    if (starts_with(apt, word)) {
+      char* full = concat(buf, apt + len);
+      add_completion(lc, full);
+      free(full);
+    }
+  }
+}
+
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
     int len = strlen(buf);
-    if (len >= 2 && strncmp(builtins[i], buf, len) == 0) {
+    if (len >= HINTS_MIN_LEN && strncmp(builtins[i], buf, len) == 0) {
       if (len < strlen(builtins[i])) {
 	linenoiseSetFreeHintsCallback(free);
 	return strdup(builtins[i] + len);
@@ -245,6 +274,10 @@ HINTS_FUNC(commands) {
      {"ssh", " <user>@<destination>"},
      {"xargs", " <command>"},
      {"ps", " aux"},
+     {"curl", " -sSL -X <method> -H <header> -d <data> -D <response header file> <url>"},
+     {"curl -sSL", " -X <method> -H <header> -d <data> -D <response header file> <url>"},
+     {"curl -sSL -X POST", " -H \"Content-Type: application/x-www-form-urlencoded\" -d <data> -D <response header file> <url>"},
+     {"curl -sSL -X GET", " -H \"Content-Type: application/json\" -D <response header file> <url>"},
      NULL
     };
   
@@ -271,10 +304,12 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   const char* post_pipe = rsplit(beg, "|", &full_buf);
   while (*post_pipe && isspace(*post_pipe)) ++post_pipe;
   
-  complete_filenames(post_pipe, lc);
+  // Order matters (higher priority stuff first)
+  complete_apt_install(post_pipe, lc);
+  complete_common(post_pipe, lc);
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);
-  complete_common(post_pipe, lc);
+  complete_filenames(post_pipe, lc);
   
   free(full_buf);
   free(beg);
