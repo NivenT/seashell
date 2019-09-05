@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "tests.h"
 #include "utils.h"
+#include "networking.h"
 
 static void test_map() {
   map primes = map_int_new(sizeof(size_t), 0, NULL);

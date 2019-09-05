@@ -11,6 +11,7 @@
 #include "builtins.h"
 #include "utils.h"
 #include "apt_repos.h"
+#include "networking.h"
 
 #define COMPLETION_FUNC(type) static void complete_##type(const char* buf, linenoiseCompletions *lc)
 #define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
@@ -231,6 +232,29 @@ COMPLETION_FUNC(apt_install) {
   }
 }
 
+COMPLETION_FUNC(git_clone) {
+  if (!starts_with(buf, "git clone https://github.com/")) return;
+  const char* post_host = buf + 29;
+  if (!strstr(post_host, "/") || strstr(post_host, " ")) return;
+
+  char* user;
+  const char* word = rsplit(post_host, "/", &user);
+  if (!word || !*word) {
+    if (user) free(user);
+    return;
+  }
+  vec* repos = get_repos(to_lower(user));
+  for (void* it = vec_first(repos); it; it = vec_next(repos, it)) {
+    char* repo = *(char**)it;
+    if (starts_with(repo, word)) {
+      char* full = concat(buf, repo + strlen(word));
+      add_completion(lc, full);
+      free(full);
+    }
+  }
+  free(user);
+}
+
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
@@ -354,6 +378,7 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   
   // Order matters (higher priority stuff first)
   complete_apt_install(post_pipe, lc);
+  complete_git_clone(post_pipe, lc);
   complete_common(post_pipe, lc);
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);

@@ -6,7 +6,7 @@
 typedef struct cell cell;
 
 // https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
-static size_t hash_int(void* data) {
+/* static */ size_t hash_int(void* data) {
   unsigned int x = *(int*)data;
   x = ((x >> 16) ^ x) * 0x45d9f3b;
   x = ((x >> 16) ^ x) * 0x45d9f3b;
