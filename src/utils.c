@@ -137,6 +137,12 @@ char* trim(char* str) {
   return str;
 }
 
+char* to_lower(char* str) {
+  if (!str) return NULL;
+  for (char* it = str; *it; it++) *it = tolower(*it);
+  return str;
+}
+
 // "hi there" -> "there"
 // "hi " -> ""
 const char* last_word(const char* str) {

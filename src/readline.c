@@ -238,28 +238,20 @@ COMPLETION_FUNC(git_clone) {
   if (!strstr(post_host, "/") || strstr(post_host, " ")) return;
 
   char* user;
-  const char* repo = rsplit(post_host, "/", &user);
-  const char* strs[] = {"https://api.github.com/users/", user, "/repos", NULL};
-  char* url = concat_many(strs);
-
-  string data = http_simple_get(url);
-  if (data.cstr) {
-    char* iter = data.cstr;
-    while(true) {
-      char* line = strsep(&iter, "\n");
-      if (!line) break;
-      if (!(line = strstr(line, "full_name"))) continue;
-      line += 14 + strlen(user); // before this, line looks like full_name": "<user>/<repo>",
-      line[strlen(line)-2] = '\0'; // after this, line should look like <repo>
-      if (starts_with(line, repo)) {
-	char* full = concat(buf, line + strlen(repo));
-	add_completion(lc, full);
-	free(full);
-      }
+  const char* word = rsplit(post_host, "/", &user);
+  if (!word || !*word) {
+    if (user) free(user);
+    return;
+  }
+  vec* repos = get_repos(to_lower(user));
+  for (void* it = vec_first(repos); it; it = vec_next(repos, it)) {
+    char* repo = *(char**)it;
+    if (starts_with(repo, word)) {
+      char* full = concat(buf, repo + strlen(word));
+      add_completion(lc, full);
+      free(full);
     }
   }
-  free_string(&data);
-  free(url);
   free(user);
 }
 

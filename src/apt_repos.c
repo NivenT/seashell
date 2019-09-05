@@ -20,7 +20,7 @@ static void cleanup_apts() {
   free_map(&apts);
 }
 
-static void clean_vec(void* addr) {
+void clean_vec(void* addr) {
   if (addr) free_vec((vec*)addr);
 }
 

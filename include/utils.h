@@ -19,6 +19,7 @@ extern char* replace_all(const char* str, const char* old, const char* new);
 
 // modifies argument
 extern char* trim(char* str);
+extern char* to_lower(char* str);
 
 extern const char* last_word(const char* str);
 

@@ -12,55 +12,47 @@
 #endif
 
 #include "networking.h"
+#include "utils.h"
 
-/*
-static bool connect_to_server(char* host, unsigned short port, int* s) {
-  *s = -1;
-  struct hostent *he = gethostbyname(host);
-  if (!he) return false;
+extern void clean_vec(void*);
+extern size_t hash_int(void*);
 
-  *s = socket(AF_INET, SOCK_STREAM, 0);
-  if (*s < 0) return false;
+static CURL* curl;
+static map repos; // user -> vec of repos
 
-  struct sockaddr_in server;
-  memset(&server, 0, sizeof(server));
-  server.sin_family = AF_INET;
-  server.sin_port = htons(port);
-  server.sin_addr.s_addr = ((struct in_addr*)he->h_addr)->s_addr;
-
-  if (connect(*s, (struct sockaddr*)&server, sizeof(server)) == 0) return true;
-  close(*s);
-  *s = -1;
-  return false;
+// https://stackoverflow.com/questions/2624192/good-hash-function-for-strings
+static size_t hash_char_star(void* data) {
+  char* str = *(char**)data;
+  size_t hash = 7;
+  while(str && *str) hash = hash*31 + *(str++);
+  return hash;
 }
 
-int http_simple_get(char* host, char* path, unsigned short port) {
-  int s;
-  if (!connect_to_server(host, port, &s)) return -1;
-  dprintf(s, "GET %s HTTP/1.0\r\n", path);
-  dprintf(s, "HOST: %s\r\n", host);
-  dprintf(s, "Upgrade-Insecure-Requests: 0\r\n");
-  dprintf(s, "\r\n");
-  return s;
+static bool char_star_eq(void* lhs, void* rhs) {
+  return strcmp(*(char**)lhs, *(char**)rhs) == 0;
 }
-*/
 
-static CURL *curl;
+static void clean_char_star(void* addr) {
+  free(*(char**)addr);
+}
 
 static void cleanup() {
-  curl_easy_cleanup(curl);
+  if (curl) curl_easy_cleanup(curl);
+  free_map(&repos);
 }
 
 static size_t grow_string(char* ptr, size_t _size, size_t nmemb, void* userdata) {
   size_t size = _size * nmemb;
   string* str = (string*)userdata;
   string_appendn(str, ptr, size);
-  return size;
+  return nmemb;
 }
 
 void init_networking() {
   curl = curl_easy_init();
-  if (curl) atexit(cleanup);
+  repos = map_new(sizeof(vec), sizeof(char*), 16, hash_char_star, char_star_eq,
+		  clean_vec, clean_char_star);
+  atexit(cleanup);
 }
 
 string http_simple_get(const char* url) {
@@ -78,4 +70,34 @@ string http_simple_get(const char* url) {
     ret = string_new(NULL);
   }
   return ret;
+}
+
+vec* get_repos(char* user) {
+  if (!map_contains(&repos, &user)) {
+    const char* strs[] = {"https://api.github.com/users/", user, "/repos", NULL};
+    char* url = concat_many(strs);
+
+    vec v = vec_new(sizeof(char*), 0, clean_char_star);
+    
+    string data = http_simple_get(url);
+    if (data.cstr) {
+      char* iter = data.cstr;
+      while(true) {
+	char* line = strsep(&iter, "\n");
+	if (!line) break;
+	if (!(line = strstr(line, "full_name"))) continue;
+	line += 14 + strlen(user); // before this, line looks like full_name": "<user>/<repo>",
+	line[strlen(line)-2] = '\0'; // after this, line should look like <repo>
+
+	char* repo = strdup(line);
+	vec_push(&v, &repo);
+      }
+    }
+    char* u = strdup(user);
+    map_insert(&repos, &u, &v);
+    
+    free_string(&data);
+    free(url);
+  }
+  return (vec*)map_get(&repos, &user);
 }
