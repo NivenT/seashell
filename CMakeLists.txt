@@ -4,9 +4,14 @@ project(seashell C)
 set(CMAKE_C_STANDARD 11) # Maybe change this...
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+find_package(CURL)
+if (${CURL_FOUND})
+  add_definitions(-DCURL_FOUND)
+endif()
+
 add_library(linenoise linenoise/linenoise.c)
 
 file(GLOB SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.c)
 add_executable(seashell ${SRCS})
-target_link_libraries(seashell linenoise)
-target_include_directories(seashell PUBLIC include linenoise/)
+target_link_libraries(seashell linenoise ${CURL_LIBRARIES})
+target_include_directories(seashell PUBLIC include linenoise/ ${CURL_INCLUDE_DIRS})

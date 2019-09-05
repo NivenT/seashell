@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "tests.h"
 #include "utils.h"
+#include "networking.h"
 
 static void test_map() {
   map primes = map_int_new(sizeof(size_t), 0, NULL);
@@ -60,8 +62,14 @@ static void test_replace_all() {
   }
 }
 
+static void test_networking() {
+  string data = http_simple_get("https://api.github.com/users/NivenT/repos");
+  assert(data.cstr);
+}
+
 void run_tests() {
   test_map();
   test_replace_all();
+  test_networking();
   exit(0);
 }

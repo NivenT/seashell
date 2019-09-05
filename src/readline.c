@@ -11,6 +11,7 @@
 #include "builtins.h"
 #include "utils.h"
 #include "apt_repos.h"
+#include "networking.h"
 
 #define COMPLETION_FUNC(type) static void complete_##type(const char* buf, linenoiseCompletions *lc)
 #define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
@@ -231,6 +232,37 @@ COMPLETION_FUNC(apt_install) {
   }
 }
 
+COMPLETION_FUNC(git_clone) {
+  if (!starts_with(buf, "git clone https://github.com/")) return;
+  const char* post_host = buf + 29;
+  if (!strstr(post_host, "/") || strstr(post_host, " ")) return;
+
+  char* user;
+  const char* repo = rsplit(post_host, "/", &user);
+  const char* strs[] = {"https://api.github.com/users/", user, "/repos", NULL};
+  char* url = concat_many(strs);
+
+  string data = http_simple_get(url);
+  if (data.cstr) {
+    char* iter = data.cstr;
+    while(true) {
+      char* line = strsep(&iter, "\n");
+      if (!line) break;
+      if (!(line = strstr(line, "full_name"))) continue;
+      line += 14 + strlen(user); // before this, line looks like full_name": "<user>/<repo>",
+      line[strlen(line)-2] = '\0'; // after this, line should look like <repo>
+      if (starts_with(line, repo)) {
+	char* full = concat(buf, line + strlen(repo));
+	add_completion(lc, full);
+	free(full);
+      }
+    }
+  }
+  free_string(&data);
+  free(url);
+  free(user);
+}
+
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
@@ -354,6 +386,7 @@ static void completion(const char* buf, linenoiseCompletions *lc) {
   
   // Order matters (higher priority stuff first)
   complete_apt_install(post_pipe, lc);
+  complete_git_clone(post_pipe, lc);
   complete_common(post_pipe, lc);
   complete_builtins(post_pipe, lc);
   complete_commands(post_pipe, lc);

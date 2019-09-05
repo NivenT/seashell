@@ -18,6 +18,7 @@
 #include "job.h"
 #include "tests.h"
 #include "apt_repos.h"
+#include "networking.h"
 
 #define CHECK_ERROR(err, cmd) if (!err) { err = !(cmd); }
 
@@ -50,6 +51,7 @@ static void init_globals() {
   }
   init_jobs();
   init_apts();
+  init_networking();
 }
 
 static void wait_for_fg() {
@@ -108,9 +110,9 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
 
-  //run_tests();
   atexit(cleanup);
   init_globals();
+  //run_tests();
   run_rc_file(seashell_pid);
   
   while (true) {
