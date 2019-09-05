@@ -194,6 +194,8 @@ pid_t jl_fg_gpid() {
 }
 
 bool jl_resume_first_stopped() {
+  if (jobs.foreground) jobs.foreground->fg = false;
+  jobs.foreground = NULL;
   for (int i = 0; i < jobs.next; ++i) {
     job* j = (job*)map_get(&jobs.jobs, &i);
     if (j && job_is_stopped(j)) {

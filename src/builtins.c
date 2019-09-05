@@ -225,7 +225,7 @@ bool handle_builtin(pipeline* pipe, command cmd, int idx, int infd, int outfd) {
   case 4: dprintf(outfd, "%s\n", home_dir); break;
   case 5: ret = alias(cmd); break;
   case 6: jl_print(); break;
-  case 7: if (!jl_has_fg()) ret = jl_resume_first_stopped(); break;
+  case 7: /* if (!jl_has_fg()) */ ret = jl_resume_first_stopped(); break;
   case 8: ret = mykill(cmd, outfd); break;
   case 9: ret = history(cmd, outfd); break;
   case 10: case 11: ret = fbg(cmd, idx == 10, outfd); break;
