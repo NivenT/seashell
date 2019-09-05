@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "subprocess.h"
@@ -22,15 +23,17 @@ bool spawn_subprocess(subprocess* sp, command cmd, bool send_input, bool get_out
   if (sp->pid < 0) return false;
   else if (sp->pid == 0) {
     if (send_input) {
-      if (dup2(infds[0], STDIN_FILENO) < 0) return false;
+      int res = dup2(infds[0], STDIN_FILENO);
       closeall(infds, 2);
+      if (res < 0) exit(0xBAD);
     }
     if (get_output) {
-      if (dup2(outfds[1], STDOUT_FILENO) < 0) return false;
+      int res = dup2(outfds[1], STDOUT_FILENO);
       closeall(outfds, 2);
+      if (res < 0) exit(0xBAD);
     }
     execvp(cmd.name, (char**)&cmd);
-    return false;
+    exit(0xBAD);
   }
   if (send_input) close(infds[0]);
   if (get_output) close(outfds[1]);

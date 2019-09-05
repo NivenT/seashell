@@ -67,3 +67,28 @@ void init_apts() {
 const vec* apts_starting_with(char c) {
   return (vec*)map_get(&apts, &c);
 }
+
+vec apts_starting_with_sp(const char* prefix) {
+  vec v = vec_new(sizeof(char*), 0, clean_str);
+
+  subprocess sp;
+  if (spawn_subprocess(&sp, (command){ .name = "apt-cache", .args = { "search", ".", NULL } },
+		       false, true)) {
+    FILE* f = fdopen(sp.outfd, "r");
+    if (f) {
+      char line[MAX_CMD_LEN];
+      while (fgets(line, MAX_CMD_LEN, f)) {
+	char* apt = first_word(line);
+	if (starts_with(apt, prefix)) {
+	  vec_push(&v, &apt);
+	} else {
+	  free(apt);
+	}
+      }
+      fclose(f);
+    }
+    waitpid(sp.pid, NULL, 0);
+    free_subprocess(&sp);
+  }
+  return v;
+}

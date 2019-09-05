@@ -6,6 +6,7 @@
 #include "utils.h"
 
 bool starts_with(const char* str, const char* prefix) {
+  if (!str || !prefix) return false;
   int len = strlen(prefix);
   return strncmp(str, prefix, len) == 0;
 }
@@ -18,6 +19,7 @@ bool starts_with_any(const char* str, const char* prefixes[]) {
 }
 
 bool ends_with(const char* str, const char* suffix) {
+  if (!str || !suffix) return false;
   int len = strlen(str);
   int len2 = strlen(suffix);
   return len >= len2 && strncmp(str + (len - len2), suffix, len2) == 0;

@@ -220,6 +220,16 @@ COMPLETION_FUNC(apt_install) {
   const char* word = last_word(buf);
   int len = strlen(word);
   if (!word || len < COMPLETION_MIN_LEN) return;
+  /**
+  vec apts = apts_starting_with_sp(word);
+  for (void* it = vec_first(&apts); it; it = vec_next(&apts, it)) {
+    char* apt = *(char**)it;
+    char* full = concat(buf, apt + len);
+    add_completion(lc, full);
+    free(full);
+  }
+  free_vec(&apts);
+  /**/
   const vec* apts = apts_starting_with(*word);
   for (void* it = vec_first(apts); it; it = vec_next(apts, it)) {
     char* apt = *(char**)it;
@@ -229,6 +239,7 @@ COMPLETION_FUNC(apt_install) {
       free(full);
     }
   }
+  /**/
 }
 
 HINTS_FUNC(builtins) {  
