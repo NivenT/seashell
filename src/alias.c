@@ -40,26 +40,35 @@ bool alias(const command cmd) {
   return true;
 }
 
+// This is gonna be annoying to fix once I add environment variable support
 bool apply_aliases(char line[MAX_CMD_LEN]) {
   int len = strlen(line);
   int size = vec_size(&aliases);
 
-  char* word = first_word(line);
-  for (int i = 0; i < size; i++) {
-    char** strs = (char**)vec_get(&aliases, i);
-    if (strcmp(word, strs[0]) == 0) {
-      int len2 = strlen(word);
-      int len3 = strlen(strs[1]);
-      if (len + (len3 - len2) >= MAX_CMD_LEN) {
-	sprintf(error_msg, "Could not apply alias ('%s' -> '%s') because it would make the command too long", strs[0], strs[1]);
-	return false;
-      }
+  char* curr = line;
+  do {
+    char* word = first_word(curr);
+    for (int i = 0; i < size; i++) {
+      char** strs = (char**)vec_get(&aliases, i);
+      if (strcmp(word, strs[0]) == 0) {
+	int len2 = strlen(word);
+	int len3 = strlen(strs[1]);
+	if (len + (len3 - len2) >= MAX_CMD_LEN) {
+	  sprintf(error_msg,
+		  "Could not apply alias ('%s' -> '%s') because it would make the command too long",
+		  strs[0], strs[1]);
+	  free(word);
+	  return false;
+	}
       
-      memmove(&line[len3], &line[len2], len - len2 + 1);
-      memcpy(&line[0], strs[1], len3);
-      break;
+	memmove(&curr[len3], &curr[len2], len - len2 + 1);
+	memcpy(&curr[0], strs[1], len3);
+	break;
+      }
     }
-  }
-  free(word);
+    free(word);
+    curr = strstr(curr, "|");
+    if (curr) curr = trim(curr+1);
+  } while (curr);
   return true;
 }
