@@ -17,7 +17,9 @@
 extern void clean_vec(void*);
 extern size_t hash_int(void*);
 
+#ifdef CURL_FOUND
 static CURL* curl;
+#endif
 static map repos; // user -> vec of repos
 
 // https://stackoverflow.com/questions/2624192/good-hash-function-for-strings
@@ -37,7 +39,9 @@ static void clean_char_star(void* addr) {
 }
 
 static void cleanup() {
+  #ifdef CURL_FOUND
   if (curl) curl_easy_cleanup(curl);
+  #endif
   free_map(&repos);
 }
 
@@ -49,26 +53,27 @@ static size_t grow_string(char* ptr, size_t _size, size_t nmemb, void* userdata)
 }
 
 void init_networking() {
+  #ifdef CURL_FOUND
   curl = curl_easy_init();
+  #endif
   repos = map_new(sizeof(vec), sizeof(char*), 16, hash_char_star, char_star_eq,
 		  clean_vec, clean_char_star);
   atexit(cleanup);
 }
 
 string http_simple_get(const char* url) {
-  CURLcode res;
-
   string ret = string_new(NULL);
+  #ifdef CURL_FOUND
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&ret);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, grow_string);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-  if ((res = curl_easy_perform(curl)) != CURLE_OK) {
+  if (curl_easy_perform(curl) != CURLE_OK) {
     free_string(&ret);
-    printf("failed: %s\n", curl_easy_strerror(res));
     ret = string_new(NULL);
   }
+  #endif
   return ret;
 }
 
@@ -78,7 +83,7 @@ vec* get_repos(char* user) {
     char* url = concat_many(strs);
 
     vec v = vec_new(sizeof(char*), 0, clean_char_star);
-    
+    #ifdef CURL_FOUND
     string data = http_simple_get(url);
     if (data.cstr) {
       char* iter = data.cstr;
@@ -93,10 +98,10 @@ vec* get_repos(char* user) {
 	vec_push(&v, &repo);
       }
     }
+    free_string(&data);
+    #endif
     char* u = strdup(user);
     map_insert(&repos, &u, &v);
-    
-    free_string(&data);
     free(url);
   }
   return (vec*)map_get(&repos, &user);

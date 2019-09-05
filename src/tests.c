@@ -62,14 +62,8 @@ static void test_replace_all() {
   }
 }
 
-static void test_networking() {
-  string data = http_simple_get("https://api.github.com/users/NivenT/repos");
-  assert(data.cstr);
-}
-
 void run_tests() {
   test_map();
   test_replace_all();
-  test_networking();
   exit(0);
 }
