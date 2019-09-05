@@ -20,7 +20,7 @@ vec vec_new(int elemsz, int capacity_hint, CleanupElemFn f) {
 void free_vec(vec* v) {
   if (!v) return;
   for (int i = 0; i < v->size; i++) {
-    v->f(v->data + i*v->elemsz);
+    if (v->f) v->f(v->data + i*v->elemsz);
   }
   v->size = v->cap = v->elemsz = 0;
   free(v->data);
@@ -53,4 +53,9 @@ void* vec_first(const vec* v) {
 void* vec_next(const vec* v, void* prev) {
   if (prev - v->data >= v->elemsz * (v->size - 1)) return NULL;
   return v && prev ? prev + v->elemsz : NULL;
+}
+
+void vec_sort(vec* v, CompareElemFn comp) {
+  if (!v) return;
+  qsort(v->data, v->size, v->elemsz, comp);
 }

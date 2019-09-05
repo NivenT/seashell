@@ -4,6 +4,7 @@
 #define VECTOR_CAPACITY_HINT 16
 
 typedef void (*CleanupElemFn)(void *addr);
+typedef int (*CompareElemFn)(const void* lhs, const void* rhs);
 
 typedef struct {
   void* data;
@@ -21,5 +22,6 @@ extern void vec_pop(vec* v);
 extern void* vec_get(const vec* v, int n);
 extern void* vec_first(const vec* v);
 extern void* vec_next(const vec* v, void* prev);
+extern void vec_sort(vec* v, CompareElemFn comp);
 
 #endif // MYVEC_H_INCLUDED

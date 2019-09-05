@@ -14,6 +14,7 @@ static map apts = { .buckets = NULL };
 // However, when you think about it, "apt-cache search ." is gonna return commands in
 // alphabetical order, so I could have just stored them in a vector and used binary search
 // instead. Oh, well. Too late to change things.
+// The real move would be the keep all these apt names in a Trie
 
 static void cleanup_apts() {
   free_map(&apts);

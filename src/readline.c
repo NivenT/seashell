@@ -220,16 +220,6 @@ COMPLETION_FUNC(apt_install) {
   const char* word = last_word(buf);
   int len = strlen(word);
   if (!word || len < COMPLETION_MIN_LEN) return;
-  /**
-  vec apts = apts_starting_with_sp(word);
-  for (void* it = vec_first(&apts); it; it = vec_next(&apts, it)) {
-    char* apt = *(char**)it;
-    char* full = concat(buf, apt + len);
-    add_completion(lc, full);
-    free(full);
-  }
-  free_vec(&apts);
-  /**/
   const vec* apts = apts_starting_with(*word);
   for (void* it = vec_first(apts); it; it = vec_next(apts, it)) {
     char* apt = *(char**)it;
@@ -239,7 +229,6 @@ COMPLETION_FUNC(apt_install) {
       free(full);
     }
   }
-  /**/
 }
 
 HINTS_FUNC(builtins) {  
@@ -261,7 +250,6 @@ HINTS_FUNC(builtins) {
   return NULL;
 }
 
-// Not sure how I feel about this
 HINTS_FUNC(commands) {
   // Should these be stored in an external .seashell_hints file and have regex support?
   static char* const hints[][2] =
@@ -306,6 +294,55 @@ HINTS_FUNC(commands) {
   return ret;
 }
 
+static int comp_str(const void* lhs, const void* rhs) {
+  const char* l = *(const char**)lhs;
+  const char* r = *(const char**)rhs;
+  return strcmp(l, r);
+}
+
+// Return negative if lhs comes before rhs
+typedef struct { char* str; int freq; } record;
+static int comp_rec(const void* lhs, const void* rhs) {
+  const record l = *(const record*)lhs;
+  const record r = *(const record*)rhs;
+  int diff = r.freq - l.freq;
+  return diff == 0 ? strlen(r.str) - strlen(l.str) : diff;
+}
+
+HINTS_FUNC(history) {
+  int buf_len = strlen(buf);
+  if (buf_len < HINTS_MIN_LEN) return NULL;
+  vec hist = vec_new(sizeof(char*), 0, NULL);
+
+  const char** hist_ptrs = linenoiseHistoryGet();
+  int len = linenoiseHistoryGetLen();
+  for (int i = 0; i < len; i++) {
+    if (strlen(hist_ptrs[i]) >= HIST_HINT_MIN_LEN) vec_push(&hist, &hist_ptrs[i]);
+  }
+  vec_sort(&hist, comp_str);
+
+  vec recs = vec_new(sizeof(record), 0, NULL);
+  for (int i = 0; i < vec_size(&hist);) {
+    record rec = { .str = *(char**)vec_get(&hist, i), .freq = 0 };
+    while (strcmp(*(char**)vec_get(&hist, i++), rec.str) == 0 && i < vec_size(&hist)) rec.freq++;
+    if (rec.freq >= HIST_HINT_MIN_FREQ) vec_push(&recs, &rec);
+  }
+  vec_sort(&recs, comp_rec);
+
+  char* ret = NULL;
+  len = vec_size(&recs) > HIST_HINT_NUM_RECS ? vec_size(&recs) : HIST_HINT_NUM_RECS;
+  for (int i = 0; i < len; i++) {
+    char* str = ((record*)vec_get(&recs, i))->str;
+    if (starts_with(str, buf)) {
+      ret = str + buf_len;
+      break;
+    }
+  }
+  free_vec(&hist);
+  free_vec(&recs);
+  return ret;
+}
+
 static void completion(const char* buf, linenoiseCompletions *lc) {
   if (!buf) return;
 
@@ -331,6 +368,7 @@ static char* hints(const char* buf, int* color, int* bold) {
   const char* post_pipe = rsplit(buf, "|", NULL);
   
   char* ret = NULL;
+  CHECK_HINT(ret,  history_hints, buf);
   CHECK_HINT(ret, builtins_hints, post_pipe);
   CHECK_HINT(ret, commands_hints, post_pipe);
   while (ret && ends_with(buf, " ") && starts_with(ret, " ")) ret++;
