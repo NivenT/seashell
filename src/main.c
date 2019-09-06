@@ -30,6 +30,8 @@
  * Support environment variables
  * * e.g. "echo $HOME"
  * * e.g. "TZ=Pacific/Samoa date"
+ * Subcommands
+ * * e.g. "play $(ls songs | shuf)"
  */
 
 char error_msg[MAX_ERR_LEN] = {0};
