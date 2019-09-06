@@ -354,7 +354,7 @@ HINTS_FUNC(history) {
   vec_sort(&recs, comp_rec);
 
   char* ret = NULL;
-  len = vec_size(&recs) > HIST_HINT_NUM_RECS ? vec_size(&recs) : HIST_HINT_NUM_RECS;
+  len = vec_size(&recs) < HIST_HINT_NUM_RECS ? vec_size(&recs) : HIST_HINT_NUM_RECS;
   for (int i = 0; i < len; i++) {
     char* str = ((record*)vec_get(&recs, i))->str;
     if (starts_with(str, buf)) {
