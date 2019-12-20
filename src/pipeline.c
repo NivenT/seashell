@@ -12,6 +12,10 @@
 #include "builtins.h"
 #include "utils.h"
 
+static bool skip_token(token* tkn) {
+  return tkn->type == COMMENT || ((tkn->type == SYMBOL || tkn->type == STRING) && tkn->str.len == 0);
+}
+
 void clean_cmd(void* addr) {
   free_cmd((command*)addr);
 }
@@ -36,7 +40,7 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
   enum {CMD, ARGS, INPUTFILE, OUTPUTFILE} mode = CMD;
   for (int i = 0; i < size; i++) {
     token* tkn = (token*)vec_get(tkns, i);
-    if (tkn->type == COMMENT) {
+    if (skip_token(tkn)) {
       free_string(&tkn->str);
       continue;
     } else if (tkn->type == SYMBOL || tkn->type == STRING) {
@@ -208,7 +212,8 @@ void print_pipeline(pipeline* pipe) {
   for (int i = 0; i < size; i++) {
     command* cmd = (command*)vec_get(&pipe->cmds, i);
     char* str = command_to_string(*cmd);
-    printf("%s ", str);
+    printf("%s", str);
+    if (i < size - 1) printf(" ");
     free(str);
     if (i < size - 1) {
       printf("| ");

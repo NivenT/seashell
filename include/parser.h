@@ -4,7 +4,7 @@
 #include "defs.h"
 
 // EOI is a special "end of input" token used to make the code for build_pipeline slightly nicer
-typedef enum {SYMBOL, STRING, PIPE, AMPERSAND, INFILE, OUTFILE, COMMENT, EOI} token_t;
+typedef enum {SYMBOL, STRING, PIPE, AMPERSAND, INFILE, OUTFILE, COMMENT, AND, OR, EOI} token_t;
 typedef struct {
   token_t type;
   string str;
@@ -13,5 +13,6 @@ typedef struct {
 // Would it be better to return a token* instead for the type information?
 extern vec parse_string(const char* line);
 extern void print_tokens(const token* tkns, int num);
+extern void vprint_tokens(vec* tkns);
 
 #endif // PARSER_H_INCLUDED

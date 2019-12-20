@@ -14,14 +14,16 @@ static void handleSIGCHLD(int sig) {
     if (pid <= 0) return;
 
     sigset_t prevmask = block_sig(SIGCHLD); // Is this necessary?
-    if (WIFEXITED(status)) {
+    if (WIFSIGNALED(status)) {
+      job* j = jl_get_job_by_pid(pid);
+      if (j) j->exit_status = WTERMSIG(status);
+      jl_update_state(pid, TERMINATED);
+    } if (WIFEXITED(status)) {
       jl_update_state(pid, TERMINATED);
     } else if (WIFSTOPPED(status)) {
       jl_update_state(pid, STOPPED);
     } else if (WIFCONTINUED(status)) {
       jl_update_state(pid, RUNNING);
-    } else if (WIFSIGNALED(status)) {
-      jl_update_state(pid, TERMINATED);
     }
     unblock_sig(SIGCHLD, prevmask);
   }

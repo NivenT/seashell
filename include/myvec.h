@@ -6,6 +6,7 @@
 typedef void (*CleanupElemFn)(void *addr);
 typedef int (*CompareElemFn)(const void* lhs, const void* rhs);
 
+// Should I use size_t instead of int?
 typedef struct {
   void* data;
   int size;
@@ -15,6 +16,8 @@ typedef struct {
 } vec;
 
 extern vec vec_new(int elemsz, int capacity_hint, CleanupElemFn f);
+// The returned vector is really more like a non-owning "slice" or "view". Do not call free_vec on it
+extern vec vec_tail(vec* v, int start);
 extern void free_vec(vec* v);
 extern int vec_size(const vec* v);
 extern void vec_push(vec* v, void* elem);

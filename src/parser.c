@@ -53,6 +53,12 @@ static void add_tkn(vec* tkns, string* s) {
 
     temp.type = SYMBOL;
     temp.str = *s;
+  } else if (s->len == 2 && s->cstr[0] == '&' && s->cstr[1] == '&') {
+    temp.type = AND;
+    free_string(s);
+  } else if (s->len == 2 && s->cstr[0] == '|' && s->cstr[1] == '|') {
+    temp.type = OR;
+    free_string(s);
   } else {
     glob_tkns(tkns, s->cstr);
     free_string(s);
@@ -85,8 +91,14 @@ vec parse_string(const char* line) {
     } else {
       if (isspace(line[i])) {
 	add_tkn(&tkns, &curr);
+      } else if (line[i] == '|' && line[i+1] == '|' && curr.len == 0) {
+	string_appendn(&curr, &line[i++], 2);
+	add_tkn(&tkns, &curr);
       } else if (line[i] == '|' && curr.len == 0) {
 	string_push(&curr, line[i]);
+	add_tkn(&tkns, &curr);
+      } else if (line[i] == '&' && line[i+1] == '&' && curr.len == 0) {
+	string_appendn(&curr, &line[i++], 2);
 	add_tkn(&tkns, &curr);
       } else if (line[i] == '&' && curr.len == 0) {
 	string_push(&curr, line[i]);
@@ -117,6 +129,12 @@ void print_tokens(const token* tkns, int num) {
     case INFILE: printf("INFILE "); break;
     case OUTFILE: printf("OUTFILE "); break;
     case COMMENT: printf("COMMENT(%s) ", tkns[i].str.cstr); break;
+    case AND: printf("AND "); break;
+    case OR: printf("OR "); break;
     }
   }
+}
+
+void vprint_tokens(vec* tkns) {
+  print_tokens(tkns->data, tkns->size);
 }

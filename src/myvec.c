@@ -17,6 +17,12 @@ vec vec_new(int elemsz, int capacity_hint, CleanupElemFn f) {
   return ret;
 }
 
+vec vec_tail(vec* v, int start) {
+  vec ret = { .data = vec_get(v, start), .size = v->size - start, .cap = v->cap - start,
+	      .elemsz = v->elemsz, .f = NULL};
+  return ret; 
+}
+
 void free_vec(vec* v) {
   if (!v) return;
   for (int i = 0; i < v->size; i++) {

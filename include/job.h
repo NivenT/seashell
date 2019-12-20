@@ -27,6 +27,7 @@ struct job {
   };
   vec processes;
   bool fg;
+  int exit_status;
 };
 
 struct joblist {

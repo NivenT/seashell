@@ -103,6 +103,7 @@ job* jl_new_job(bool fg) {
   j.id = jobs.next;
   j.fg = fg;
   j.processes = vec_new(sizeof(process), 0, free_process);
+  j.exit_status = -1;
   
   map_insert(&jobs.jobs, &jobs.next, &j);
   job* ret = (job*)map_get(&jobs.jobs, &jobs.next);
