@@ -109,6 +109,12 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   }
 }
 
+void out(const char* str) {
+  write(STDOUT_FILENO, str, strlen(str));
+  fflush(stdout);
+  sleep(3);
+}
+
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
   
@@ -116,6 +122,20 @@ int main(int argc, char *argv[]) {
   init_globals();
   //run_tests();
   run_rc_file(seashell_pid);
+
+  /*
+  const char* start = PROMPT;
+  out(start);
+  printf(" (%ld)", strlen(start));
+  fflush(stdout);
+  sleep(1);
+  out("\r\x1b[13C!");
+  out("\r\x1b[9C\x1b[0K");
+  out("\rcmdshell");
+  out(" works");
+  out("\n");
+  return 0;
+  */
   
   while (true) {
     char line[MAX_CMD_LEN];
