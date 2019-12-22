@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "expression.h"
 #include "parser.h"
@@ -36,19 +38,30 @@ bool build_expression(vec* tkns, expression* expr) {
   return build_pipeline(tkns, expr->lhs);
 }
 
-static job* run_pipe(pipeline* pipe) {
-  job* j = jl_new_job(pipe->fg);
-  if (execute_pipeline(pipe, j)) finish_job_prep(j);
-  return j;
-}
-
 bool execute_expression(expression* expr) {
   if (!expr) {
     strcpy(error_msg, "Tried executing a NULL expression");
     return false;
   }
-  job* j = run_pipe(expr->lhs);
-  
+
+  job* j = jl_new_job(expr->lhs->fg);
+  if (!execute_pipeline(expr, expr->lhs, j)) return false;
+  if (!finish_job_prep(j)) return false;
+  if (expr->type == LEAF) return true;
+  pid_t pid = fork();
+  if (pid == 0) {
+    int status;
+    waitpid(job_get_last_pid(j), &status, 0);
+    if (WIFEXITED(status)) {
+      int stat = WEXITSTATUS(status);
+      if ((stat == 0 && expr->type == ALL) || (stat != 0 && expr->type == ANY)) {
+	execute_expression(expr->rhs);
+      }
+    } else return false;
+    exit(0);
+  }
+  return true;
+
   /*
     CHECK_ERROR(error, build_pipeline(&tkns, &pipe));
     free_vec(&tkns);

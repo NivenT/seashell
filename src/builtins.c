@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "signals.h"
 #include "job.h"
+#include "expression.h"
 
 const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill",
 			  "history", "fg", "bg", NULL};
@@ -211,7 +212,7 @@ static bool history(struct command cmd, int outfd) {
   return true;
 }
 
-bool handle_builtin(pipeline* pipe, command cmd, int idx, int infd, int outfd) {
+bool handle_builtin(expression* expr, command cmd, int idx, int infd, int outfd) {
   bool ret = true;
 
   // Possibly excessive, but these are fast so it should be fine
@@ -219,7 +220,7 @@ bool handle_builtin(pipeline* pipe, command cmd, int idx, int infd, int outfd) {
   sigset_t prev, block = get_sig_full();
   sigprocmask(SIG_BLOCK, &block, &prev);
   switch(idx) {
-  case 0: case 1: free_pipeline(pipe); exit(0); break;
+  case 0: case 1: free_expression(expr); exit(0); break;
   case 2: ret = cd(cmd); break;
   case 3: ret = bookmark(cmd); break;
   case 4: dprintf(outfd, "%s\n", home_dir); break;
