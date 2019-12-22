@@ -8,18 +8,13 @@ typedef struct expression expression;
 
 struct expression {
   expression_t type;
-  pipeline* pipe;
-  union {
-    expression* chlds[2];
-    struct {
-      expression* lhs;
-      expression* rhs;
-    };
-  };
+  // I don't like this asymettrey but it makes implementing things simpler
+  pipeline* lhs;
+  expression* rhs;
 };
 
 extern bool build_expression(vec* tkns, expression* expr);
-extern bool execute_expression(expression* expr, job* j);
+extern bool execute_expression(expression* expr);
 extern void print_expression(expression* expr);
 extern void free_expression(expression* expr);
 

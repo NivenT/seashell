@@ -27,12 +27,14 @@ struct job {
   };
   vec processes;
   bool fg;
-  int exit_status;
 };
 
 struct joblist {
   size_t next;
   map jobs; // map from job id (int) to job
+  // TODO: Come up with a more memeory efficient way to keep track of exit statuses
+  //       long enough for them to be useful.
+  map exit_statuses; // map from job id (int) to exit_status (int)
   job* foreground;
 };
 
@@ -45,6 +47,7 @@ extern pid_t job_get_gpid(job* j);
 extern bool job_is_stopped(job* j);
 extern bool job_is_terminated(job* j);
 extern void job_print(job* j);
+extern bool finish_job_prep(job* j);
 
 // These all implicitly operate on a global joblist
 extern job* jl_new_job(bool fg);
@@ -60,5 +63,7 @@ extern pid_t jl_fg_gpid();
 extern bool jl_resume_first_stopped();
 extern bool jl_resume(job* j, bool fg);
 extern bool jl_has_job(size_t id);
+extern void jl_set_exit_status(size_t pid, int status);
+extern int jl_get_exit_status(size_t id);
 
 #endif // JOB_H_INCLUDED

@@ -6,7 +6,7 @@
 
 #include "job.h"
 
-joblist jobs;
+static joblist jobs;
 
 static void free_job(void* data) {
   job j = *(job*)data;
@@ -20,13 +20,17 @@ static void free_process(void* data) {
 
 static void cleanup() {
   free_map(&jobs.jobs);
+  free_map(&jobs.exit_statuses);
   jobs.foreground = NULL;
   jobs.next = 0;
 }
 
 void init_jobs() {
   jobs.next = 1;
+  // These are set up as maps from ints, but are really maps from size_t's
+  // This will cause trouble if there are more than like 4 billion jobs
   jobs.jobs = map_int_new(sizeof(job), 0, free_job);
+  jobs.exit_statuses = map_int_new(sizeof(int), 0, NULL);
   jobs.foreground = NULL;
   
   atexit(cleanup);
@@ -86,6 +90,21 @@ void job_print(job* j) {
   }
 }
 
+bool finish_job_prep(job* j) {
+  if (job_is_terminated(j)) {
+    jl_remove_job(j->id);
+    return true;
+  } else if (j->fg) {
+    if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
+      strcpy(error_msg, "Could not transfer control of the terminal to new job");
+      return false;
+    }
+  } else {
+    job_print(j);
+  }
+  return true;
+}
+
 static bool jl_set_foreground(job* j) {
   jobs.foreground = j;
   j->fg = true;
@@ -103,7 +122,6 @@ job* jl_new_job(bool fg) {
   j.id = jobs.next;
   j.fg = fg;
   j.processes = vec_new(sizeof(process), 0, free_process);
-  j.exit_status = -1;
   
   map_insert(&jobs.jobs, &jobs.next, &j);
   job* ret = (job*)map_get(&jobs.jobs, &jobs.next);
@@ -112,6 +130,8 @@ job* jl_new_job(bool fg) {
   return fg ? (jobs.foreground = ret) : ret;
 }
 
+// TODO: Use map_first, map_next (not just in this function, but in any function where
+//                                "for (int i = 0; i < jobs.next; ++i)" appears")
 job* jl_get_job_by_pid(pid_t pid) {
   for (int i = 0; i < jobs.next; ++i) {
     job* j = (job*)map_get(&jobs.jobs, &i);
@@ -126,11 +146,7 @@ job* jl_get_job_by_pid(pid_t pid) {
 }
 
 job* jl_get_job_by_id(size_t id) {
-  for (int i = 0; i < jobs.next; ++i) {
-    job* j = (job*)map_get(&jobs.jobs, &i);
-    if (j && j->id == id) return j;
-  }
-  return NULL;
+  return (job*)map_get(&jobs.jobs, &id);
 }
 
 process* jl_get_proc(pid_t pid) {
@@ -215,4 +231,17 @@ bool jl_resume(job* j, bool fg) {
   }
   kill(-gpid, SIGCONT);
   return fg ? jl_set_foreground(j) : true;
+}
+
+// Because of pipes, this should probably be more complicated
+// Like, some of the parts of the pipe might exit correctly while others do not
+// and you don't want a successful exit at the end to overwrite a failure earlier on
+void jl_set_exit_status(size_t pid, int status) {
+  job* j = jl_get_job_by_pid(pid);
+  if (j) map_insert(&jobs.exit_statuses, &j->id, &status); 
+}
+
+int jl_get_exit_status(size_t id) {
+  int* status = (int*)map_get(&jobs.exit_statuses, &id);
+  return status ? *status : 0; // not sure if zero is the right default value
 }

@@ -72,21 +72,6 @@ static void regain_terminal_control(const pid_t seashell_pid) {
   unblock_sig(SIGTTOU, prevmask);
 }
 
-static bool finish_job_prep(job* j) {
-  if (job_is_terminated(j)) {
-    jl_remove_job(j->id);
-    return true;
-  } else if (j->fg) {
-    if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
-      strcpy(error_msg, "Could not transfer control of the terminal to new job");
-      return false;
-    }
-  } else {
-    job_print(j);
-  }
-  return true;
-}
-
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   pipeline pipe;
   expression expr;
@@ -95,18 +80,19 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   if (line[0] != '\0') {
     CHECK_ERROR(error, apply_aliases(line));
     vec tkns = parse_string(line);
-
-    build_expression(&tkns, &expr);
-    print_expression(&expr);
-    printf("\n");
-    return;
-
+    
+    CHECK_ERROR(error, build_expression(&tkns, &expr));
+    free_vec(&tkns);
+    CHECK_ERROR(error, execute_expression(&expr));
+    free_expression(&expr);
+    /*
     CHECK_ERROR(error, build_pipeline(&tkns, &pipe));
     free_vec(&tkns);
     job* j = jl_new_job(pipe.fg);
     CHECK_ERROR(error, execute_pipeline(&pipe, j));
     CHECK_ERROR(error, finish_job_prep(j));
     free_pipeline(&pipe);
+    */
   } else return;
   
   if (!error) {

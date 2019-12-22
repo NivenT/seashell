@@ -15,8 +15,7 @@ static void handleSIGCHLD(int sig) {
 
     sigset_t prevmask = block_sig(SIGCHLD); // Is this necessary?
     if (WIFSIGNALED(status)) {
-      job* j = jl_get_job_by_pid(pid);
-      if (j) j->exit_status = WTERMSIG(status);
+      jl_set_exit_status(pid, WTERMSIG(status));
       jl_update_state(pid, TERMINATED);
     } if (WIFEXITED(status)) {
       jl_update_state(pid, TERMINATED);
