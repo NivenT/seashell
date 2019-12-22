@@ -59,8 +59,8 @@ static void init_globals() {
 }
 
 static void wait_for_fg() {
-  sigset_t prevmask = block_sig(SIGCHLD);
-  while (jl_has_fg()) sigsuspend(&prevmask);
+  sigset_t prevmask = block_sig2(SIGCHLD, SIGUSR1);
+  while (jl_has_fg() || expr_in_fg) sigsuspend(&prevmask);
   unblock_sig(SIGCHLD, prevmask);
 }
 
@@ -84,19 +84,11 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
     CHECK_ERROR(error, build_expression(&tkns, &expr));
     free_vec(&tkns);
     CHECK_ERROR(error, execute_expression(&expr));
-    free_expression(&expr);
-    /*
-    CHECK_ERROR(error, build_pipeline(&tkns, &pipe));
-    free_vec(&tkns);
-    job* j = jl_new_job(pipe.fg);
-    CHECK_ERROR(error, execute_pipeline(&pipe, j));
-    CHECK_ERROR(error, finish_job_prep(j));
-    free_pipeline(&pipe);
-    */
   } else return;
   
   if (!error) {
     wait_for_fg();
+    free_expression(&expr);
     regain_terminal_control(seashell_pid);
   } else {
     dprintf(STDERR_FILENO, "ERROR: %s\n", error_msg);

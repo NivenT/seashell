@@ -54,14 +54,6 @@ void job_add_process(job* j, pid_t pid, procstate state, char* cmds) {
 pid_t job_get_gpid(job* j) {
   if (!j) return 0;
   return j->processes.size > 0 ? ((process*)vec_get(&j->processes, 0))->pid : 0;
-  /*
-  int size = vec_size(&j->processes);
-  for (int i = 0; i < size; i++) {
-    process* p = (process*)vec_get(&j->processes, i);
-    return p->pid;
-  }
-  return 0;
-  */
 }
 
 pid_t job_get_last_pid(job* j) {

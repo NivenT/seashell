@@ -7,6 +7,8 @@
 #include "signals.h"
 #include "job.h"
 
+extern bool expr_in_fg;
+
 static void handleSIGCHLD(int sig) {
   int status;
   while (true) {
@@ -48,6 +50,10 @@ static void handleSIGTSTP(int sig) {
   unblock_sig(SIGCHLD, prevmask);
 }
 
+static void handleSIGUSR1(int sig) {
+  expr_in_fg = false;
+}
+
 // I've never used a function pointer without a typedef before, and I see why
 static bool install_signal_handler(int signum, void (*sighandler)(int)) {
   struct sigaction action;
@@ -62,6 +68,7 @@ bool install_signal_handlers() {
   ret = ret && install_signal_handler(SIGCHLD, handleSIGCHLD);
   ret = ret && install_signal_handler(SIGINT, handleSIGINT);
   ret = ret && install_signal_handler(SIGTSTP, handleSIGTSTP);
+  ret = ret && install_signal_handler(SIGUSR1, handleSIGUSR1);
   return ret;
 }
 
@@ -80,6 +87,16 @@ sigset_t get_sig_full() {
 
 sigset_t block_sig(int sig) {
   sigset_t old, block = get_sig_singleton(sig);
+  sigprocmask(SIG_BLOCK, &block, &old);
+  return old;
+}
+
+sigset_t block_sig2(int sig1, int sig2) {
+  sigset_t block;
+  sigemptyset(&block);
+  sigaddset(&block, sig1);
+  sigaddset(&block, sig2);
+  sigset_t old;
   sigprocmask(SIG_BLOCK, &block, &old);
   return old;
 }

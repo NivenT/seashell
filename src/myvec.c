@@ -52,6 +52,14 @@ void* vec_get(const vec* v, int n) {
   return v->data + (v->elemsz * n);
 }
 
+void* vec_front(const vec* v) {
+  return v->size == 0 ? NULL : vec_get(v, 0);
+}
+
+void* vec_back(const vec* v) {
+  return v->size == 0 ? NULL : vec_get(v, v->size - 1);
+}
+
 void* vec_first(const vec* v) {
   return v ? v->data : NULL;
 }

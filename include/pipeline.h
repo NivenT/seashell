@@ -10,6 +10,7 @@ struct expression;
 
 struct pipeline {
   vec cmds;
+  // TODO: Get rid of this
   bool fg;
   char* infile;
   char* outfile;
