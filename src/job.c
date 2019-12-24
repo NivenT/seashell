@@ -236,7 +236,8 @@ bool jl_resume(job* j, bool fg) {
 // Because of pipes, this should probably be more complicated
 // Like, some of the parts of the pipe might exit correctly while others do not
 // and you don't want a successful exit at the end to overwrite a failure earlier on
-void jl_set_exit_status(size_t pid, int status) {
+void jl_set_exit_status(pid_t pid, int status) {
+  printf("Setting exit status for job with pid %d\n", pid);
   job* j = jl_get_job_by_pid(pid);
   if (j) map_insert(&jobs.exit_statuses, &j->id, &status); 
 }
@@ -244,4 +245,8 @@ void jl_set_exit_status(size_t pid, int status) {
 int jl_get_exit_status(size_t id) {
   int* status = (int*)map_get(&jobs.exit_statuses, &id);
   return status ? *status : 0; // not sure if zero is the right default value
+}
+
+bool jl_has_exit_status(size_t id) {
+  return map_contains(&jobs.exit_statuses, &id);
 }

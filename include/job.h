@@ -43,6 +43,7 @@ extern void init_jobs();
 extern char* procstate_to_string(procstate state);
 
 extern void job_add_process(job* j, pid_t pid, procstate state, char* cmds);
+// TODO: Fix this so it says pgid instead of gpid
 extern pid_t job_get_gpid(job* j);
 extern pid_t job_get_last_pid(job* j);
 extern bool job_is_stopped(job* j);
@@ -64,7 +65,8 @@ extern pid_t jl_fg_gpid();
 extern bool jl_resume_first_stopped();
 extern bool jl_resume(job* j, bool fg);
 extern bool jl_has_job(size_t id);
-extern void jl_set_exit_status(size_t pid, int status);
+extern void jl_set_exit_status(pid_t pid, int status);
 extern int jl_get_exit_status(size_t id);
+extern bool jl_has_exit_status(size_t id);
 
 #endif // JOB_H_INCLUDED

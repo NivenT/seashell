@@ -51,6 +51,7 @@ static void handleSIGTSTP(int sig) {
 }
 
 static void handleSIGUSR1(int sig) {
+  printf("Received SIGUSR1\n");
   expr_in_fg = false;
 }
 
@@ -79,6 +80,14 @@ sigset_t get_sig_singleton(int sig) {
   return singleton;
 }
 
+sigset_t get_sig_pair(int sig1, int sig2) {
+  sigset_t pair;
+  sigemptyset(&pair);
+  sigaddset(&pair, sig1);
+  sigaddset(&pair, sig2);
+  return pair;
+}
+
 sigset_t get_sig_full() {
   sigset_t all;
   sigfillset(&all);
@@ -92,11 +101,7 @@ sigset_t block_sig(int sig) {
 }
 
 sigset_t block_sig2(int sig1, int sig2) {
-  sigset_t block;
-  sigemptyset(&block);
-  sigaddset(&block, sig1);
-  sigaddset(&block, sig2);
-  sigset_t old;
+  sigset_t old, block = get_sig_pair(sig1, sig2);
   sigprocmask(SIG_BLOCK, &block, &old);
   return old;
 }
@@ -105,4 +110,11 @@ void unblock_sig(int sig, sigset_t prevmask) {
   sigset_t block = get_sig_singleton(sig);
   // assume sigismember won't error
   if (!sigismember(&prevmask, sig)) sigprocmask(SIG_UNBLOCK, &block, NULL);
+}
+
+void unblock_sig2(int sig1, int sig2, sigset_t prevmask) {
+  sigset_t block = get_sig_pair(sig1, sig2);
+  if (!sigismember(&prevmask, sig1) && !sigismember(&prevmask, sig2)) {
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
+  }
 }

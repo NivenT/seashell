@@ -67,6 +67,7 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
   }
 
   job* j = jl_new_job(fg);
+
   if (!execute_pipeline(root, node->lhs, j)) return false;
   if (!finish_job_prep(j)) return false;
   if (node->type == LEAF) return true;
@@ -76,23 +77,34 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
   pid_t pid = fork();
   if (pid == 0) {
     int status;
-    if (waitpid(job_get_last_pid(j), &status, 0) == -1) {
-      sprintf(error_msg, "waitpid errored: %s", strerror(errno));
-      return false;
-    }
-    
-    if (WIFEXITED(status)) {
-      int stat = WEXITSTATUS(status);
+
+    //kill(-job_get_gpid(j), SIGCONT);
+    pid_t last = job_get_last_pid(j);
+    printf("last pid = %d and fg = %d\n", last, fg);
+    if (waitpid(last, &status, 0) == last) {
+      if (WIFEXITED(status)) {
+	int stat = WEXITSTATUS(status);
+	if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
+	  execute_expression_node(root, node->rhs, fg);
+	}
+      } else if (WIFSIGNALED(status)) {
+	if (node->type == ANY) execute_expression_node(root, node->rhs, fg);
+      } else {
+	if (fg) kill(root_pid, SIGUSR1);
+	strcpy(error_msg, "waitpid returned but child had not exited");
+	return false;
+      }
+    } else if (jl_has_exit_status(j->id)) {
+      int stat = jl_get_exit_status(j->id);
       if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
 	execute_expression_node(root, node->rhs, fg);
       }
-    } else if (WIFSIGNALED(status)) {
-      if (node->type == ANY) execute_expression_node(root, node->rhs, fg);
     } else {
-      kill(root_pid, SIGUSR1);
-      strcpy(error_msg, "waitpid returned but child had not exited");
+      sprintf(error_msg, "waitpid errored: %s", strerror(errno));
+      if (fg) kill(root_pid, SIGUSR1);
       return false;
-    }
+    } 
+    
     if (fg) kill(root_pid, SIGUSR1);
     exit(0);
   }

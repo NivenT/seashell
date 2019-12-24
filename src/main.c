@@ -61,7 +61,7 @@ static void init_globals() {
 static void wait_for_fg() {
   sigset_t prevmask = block_sig2(SIGCHLD, SIGUSR1);
   while (jl_has_fg() || expr_in_fg) sigsuspend(&prevmask);
-  unblock_sig(SIGCHLD, prevmask);
+  unblock_sig2(SIGCHLD, SIGUSR1, prevmask);
 }
 
 static void regain_terminal_control(const pid_t seashell_pid) {
@@ -73,19 +73,17 @@ static void regain_terminal_control(const pid_t seashell_pid) {
 }
 
 void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
-  pipeline pipe;
   expression expr;
-  
+
   line = trim(line); // It bothers me that this works
   if (line[0] != '\0') {
     CHECK_ERROR(error, apply_aliases(line));
     vec tkns = parse_string(line);
-    
     CHECK_ERROR(error, build_expression(&tkns, &expr));
     free_vec(&tkns);
     CHECK_ERROR(error, execute_expression(&expr));
   } else return;
-  
+
   if (!error) {
     wait_for_fg();
     free_expression(&expr);
@@ -103,7 +101,7 @@ int main(int argc, char *argv[]) {
   init_globals();
   //run_tests();
   run_rc_file(seashell_pid);
-  
+
   while (true) {
     char line[MAX_CMD_LEN];
     bool error = false;

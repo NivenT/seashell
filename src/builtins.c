@@ -129,6 +129,7 @@ static bool mykill(const command cmd, int outfd) {
   char* sigstr = argv[argc-1];
   int sig = 0;
 
+  // TODO: Use sys_siglist instead
   if (strcmp(sigstr, "SIGCONT") == 0) {
     sig = SIGCONT;
   } else if (strcmp(sigstr, "SIGTSTP") == 0) {
