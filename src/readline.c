@@ -163,6 +163,7 @@ COMPLETION_FUNC(common) {
      "git submodule update --recursive --init",
      "git submodule add",
      "git fetch",
+     "bundle exec jekyll liveserve",
      NULL
     };
 
