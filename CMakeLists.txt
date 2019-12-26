@@ -4,6 +4,8 @@ project(seashell C)
 set(CMAKE_C_STANDARD 11) # Maybe change this...
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+
 find_package(CURL)
 if (${CURL_FOUND})
   add_definitions(-DCURL_FOUND)

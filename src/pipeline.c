@@ -165,8 +165,7 @@ bool execute_pipeline(expression* e, pipeline* p, job* j) {
 	bool could_connect = connect_pipe(p, fds, i);
 	closeall(fds, nfds);
 	if (!could_connect) return false;
-	//raise(SIGSTOP);
-	execvp(cmd.name, (char**)&cmd);
+        execvp(cmd.name, (char**)&cmd);
 	sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
 	return false;
       } else {

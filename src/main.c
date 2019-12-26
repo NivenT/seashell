@@ -52,8 +52,10 @@ static void init_globals() {
   if (!install_signal_handlers()) {
     printf("Could not install custom signal handlers: %s\n", strerror(errno));
     exit(0xBAD);
+  } else if (!init_jobs()) {
+    printf("Could not initialize job list: %s\n", strerror(errno));
+    exit(0xBAD);
   }
-  init_jobs();
   init_apts();
   init_networking();
 }

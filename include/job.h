@@ -27,6 +27,8 @@ struct job {
   };
   vec processes;
   bool fg;
+  // file descriptor to write exit status to
+  int stat_fd;
 };
 
 struct joblist {
@@ -38,7 +40,7 @@ struct joblist {
   job* foreground;
 };
 
-extern void init_jobs();
+extern bool init_jobs();
 
 extern char* procstate_to_string(procstate state);
 

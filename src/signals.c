@@ -51,7 +51,6 @@ static void handleSIGTSTP(int sig) {
 }
 
 static void handleSIGUSR1(int sig) {
-  printf("Received SIGUSR1\n");
   expr_in_fg = false;
 }
 

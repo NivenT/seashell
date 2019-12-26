@@ -1,3 +1,4 @@
+#include <sys/mman.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -5,8 +6,9 @@
 #include <string.h>
 
 #include "job.h"
+#include "utils.h"
 
-static joblist jobs;
+static joblist* jobs;
 
 static void free_job(void* data) {
   job j = *(job*)data;
@@ -19,21 +21,25 @@ static void free_process(void* data) {
 }
 
 static void cleanup() {
-  free_map(&jobs.jobs);
-  free_map(&jobs.exit_statuses);
-  jobs.foreground = NULL;
-  jobs.next = 0;
+  free_map(&jobs->jobs);
+  free_map(&jobs->exit_statuses);
+  jobs->foreground = NULL;
+  jobs->next = 0;
 }
 
-void init_jobs() {
-  jobs.next = 1;
+bool init_jobs() {
+  jobs = mmap(NULL, sizeof(*jobs), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+  if (jobs == MAP_FAILED) return false;
+  
+  jobs->next = 1;
   // These are set up as maps from ints, but are really maps from size_t's
   // This will cause trouble if there are more than like 4 billion jobs
-  jobs.jobs = map_int_new(sizeof(job), 0, free_job);
-  jobs.exit_statuses = map_int_new(sizeof(int), 0, NULL);
-  jobs.foreground = NULL;
+  jobs->jobs = map_int_new(sizeof(job), 0, free_job);
+  jobs->exit_statuses = map_int_new(sizeof(int), 0, NULL);
+  jobs->foreground = NULL;
   
   atexit(cleanup);
+  return true;
 }
 
 char* procstate_to_string(procstate state) {
@@ -106,7 +112,7 @@ bool finish_job_prep(job* j) {
 }
 
 static bool jl_set_foreground(job* j) {
-  jobs.foreground = j;
+  jobs->foreground = j;
   j->fg = true;
   if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
     strcpy(error_msg, "Could not transfer control of the terminal to new job");
@@ -116,25 +122,26 @@ static bool jl_set_foreground(job* j) {
 }
 
 job* jl_new_job(bool fg) {
-  if (jobs.foreground) return NULL;
+  if (jobs->foreground) return NULL;
   
   job j;
-  j.id = jobs.next;
+  j.id = jobs->next;
   j.fg = fg;
   j.processes = vec_new(sizeof(process), 0, free_process);
+  j.stat_fd = -1;
   
-  map_insert(&jobs.jobs, &jobs.next, &j);
-  job* ret = (job*)map_get(&jobs.jobs, &jobs.next);
-  jobs.next++;
+  map_insert(&jobs->jobs, &jobs->next, &j);
+  job* ret = (job*)map_get(&jobs->jobs, &jobs->next);
+  jobs->next++;
 
-  return fg ? (jobs.foreground = ret) : ret;
+  return fg ? (jobs->foreground = ret) : ret;
 }
 
 // TODO: Use map_first, map_next (not just in this function, but in any function where
-//                                "for (int i = 0; i < jobs.next; ++i)" appears")
+//                                "for (int i = 0; i < jobs->next; ++i)" appears")
 job* jl_get_job_by_pid(pid_t pid) {
-  for (int i = 0; i < jobs.next; ++i) {
-    job* j = (job*)map_get(&jobs.jobs, &i);
+  for (int i = 0; i < jobs->next; ++i) {
+    job* j = (job*)map_get(&jobs->jobs, &i);
     if (j) {
       for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
 	process* proc = (process*)vec_get(&j->processes, idx);
@@ -146,12 +153,12 @@ job* jl_get_job_by_pid(pid_t pid) {
 }
 
 job* jl_get_job_by_id(size_t id) {
-  return (job*)map_get(&jobs.jobs, &id);
+  return (job*)map_get(&jobs->jobs, &id);
 }
 
 process* jl_get_proc(pid_t pid) {
-    for (int i = 0; i < jobs.next; ++i) {
-    job* j = (job*)map_get(&jobs.jobs, &i);
+    for (int i = 0; i < jobs->next; ++i) {
+    job* j = (job*)map_get(&jobs->jobs, &i);
     if (j) {
       for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
 	process* proc = (process*)vec_get(&j->processes, idx);
@@ -163,7 +170,7 @@ process* jl_get_proc(pid_t pid) {
 }
 
 bool jl_has_job(size_t id) {
-  return map_get(&jobs.jobs, &id) != NULL;
+  return map_get(&jobs->jobs, &id) != NULL;
 }
 
 void jl_update_state(pid_t pid, procstate state) {
@@ -174,7 +181,7 @@ void jl_update_state(pid_t pid, procstate state) {
     switch(proc->state) {
     case STOPPED:
       j->fg = false;
-      jobs.foreground = NULL;
+      jobs->foreground = NULL;
       break;
     }
     if (job_is_terminated(j)) {
@@ -189,32 +196,37 @@ procstate jl_get_sate(pid_t pid) {
 }
 
 void jl_print() {
-  for (int i = 0; i < jobs.next; ++i) {
-    job* j = (job*)map_get(&jobs.jobs, &i);
+  for (int i = 0; i < jobs->next; ++i) {
+    job* j = (job*)map_get(&jobs->jobs, &i);
     if (j) job_print(j);
   }
 }
 
 void jl_remove_job(size_t id) {
   job* j = jl_get_job_by_id(id);
-  if (j == jobs.foreground) jobs.foreground = NULL;
-  // Is this valid?
-  if (j) map_remove(&jobs.jobs, &j->id);
+  if (j == jobs->foreground) jobs->foreground = NULL;
+  if (j) {
+    if (j->stat_fd >= 0) {
+      dprintf(j->stat_fd, "%d", jl_get_exit_status(id));
+      close(j->stat_fd);
+    }
+    map_remove(&jobs->jobs, &j->id);
+  }
 }
 
 bool jl_has_fg() {
-  return jobs.foreground != NULL;
+  return jobs->foreground != NULL;
 }
 
 pid_t jl_fg_gpid() {
-  return jobs.foreground ? job_get_gpid(jobs.foreground) : 0;
+  return jobs->foreground ? job_get_gpid(jobs->foreground) : 0;
 }
 
 bool jl_resume_first_stopped() {
-  if (jobs.foreground) jobs.foreground->fg = false;
-  jobs.foreground = NULL;
-  for (int i = 0; i < jobs.next; ++i) {
-    job* j = (job*)map_get(&jobs.jobs, &i);
+  if (jobs->foreground) jobs->foreground->fg = false;
+  jobs->foreground = NULL;
+  for (int i = 0; i < jobs->next; ++i) {
+    job* j = (job*)map_get(&jobs->jobs, &i);
     if (j && job_is_stopped(j)) {
       return jl_resume(j, true);
     }
@@ -237,16 +249,15 @@ bool jl_resume(job* j, bool fg) {
 // Like, some of the parts of the pipe might exit correctly while others do not
 // and you don't want a successful exit at the end to overwrite a failure earlier on
 void jl_set_exit_status(pid_t pid, int status) {
-  printf("Setting exit status for job with pid %d\n", pid);
   job* j = jl_get_job_by_pid(pid);
-  if (j) map_insert(&jobs.exit_statuses, &j->id, &status); 
+  if (j) map_insert(&jobs->exit_statuses, &j->id, &status); 
 }
 
 int jl_get_exit_status(size_t id) {
-  int* status = (int*)map_get(&jobs.exit_statuses, &id);
+  int* status = (int*)map_get(&jobs->exit_statuses, &id);
   return status ? *status : 0; // not sure if zero is the right default value
 }
 
 bool jl_has_exit_status(size_t id) {
-  return map_contains(&jobs.exit_statuses, &id);
+  return map_contains(&jobs->exit_statuses, &id);
 }
