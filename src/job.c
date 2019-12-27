@@ -8,7 +8,7 @@
 #include "job.h"
 #include "expression.h"
 
-static joblist* jobs;
+static joblist jobs;
 
 static void free_job(void* data) {
   job j = *(job*)data;
@@ -21,20 +21,17 @@ static void free_process(void* data) {
 }
 
 static void cleanup() {
-  free_map(&jobs->jobs);
-  jobs->foreground = NULL;
-  jobs->next = 0;
+  free_map(&jobs.jobs);
+  jobs.foreground = NULL;
+  jobs.next = 0;
 }
 
 bool init_jobs() {
-  jobs = mmap(NULL, sizeof(*jobs), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-  if (jobs == MAP_FAILED) return false;
-  
-  jobs->next = 1;
+  jobs.next = 1;
   // These are set up as maps from ints, but are really maps from size_t's
-  // This will cause trouble if there are more than like 4 billion jobs
-  jobs->jobs = map_int_new(sizeof(job), 0, free_job);
-  jobs->foreground = NULL;
+  // This will cause trouble if there are more than like billions of jobs
+  jobs.jobs = map_int_new(sizeof(job), 0, free_job);
+  jobs.foreground = NULL;
   
   atexit(cleanup);
   return true;
@@ -111,7 +108,7 @@ bool finish_job_prep(job* j) {
 }
 
 static bool jl_set_foreground(job* j) {
-  jobs->foreground = j;
+  jobs.foreground = j;
   j->fg = true;
   if (tcsetpgrp(STDIN_FILENO, job_get_gpid(j)) != 0) {
     strcpy(error_msg, "Could not transfer control of the terminal to new job");
@@ -121,26 +118,26 @@ static bool jl_set_foreground(job* j) {
 }
 
 job* jl_new_job(bool fg) {
-  if (jobs->foreground) return NULL;
+  if (jobs.foreground) return NULL;
   
   job j;
-  j.id = jobs->next;
+  j.id = jobs.next;
   j.fg = fg;
   j.processes = vec_new(sizeof(process), 0, free_process);
   j.exit_status = -1;
   
-  map_insert(&jobs->jobs, &jobs->next, &j);
-  job* ret = (job*)map_get(&jobs->jobs, &jobs->next);
-  jobs->next++;
+  map_insert(&jobs.jobs, &jobs.next, &j);
+  job* ret = (job*)map_get(&jobs.jobs, &jobs.next);
+  jobs.next++;
 
-  return fg ? (jobs->foreground = ret) : ret;
+  return fg ? (jobs.foreground = ret) : ret;
 }
 
 // TODO: Use map_first, map_next (not just in this function, but in any function where
-//                                "for (int i = 0; i < jobs->next; ++i)" appears")
+//                                "for (int i = 0; i < jobs.next; ++i)" appears")
 job* jl_get_job_by_pid(pid_t pid) {
-  for (int i = 0; i < jobs->next; ++i) {
-    job* j = (job*)map_get(&jobs->jobs, &i);
+  for (int i = 0; i < jobs.next; ++i) {
+    job* j = (job*)map_get(&jobs.jobs, &i);
     if (j) {
       for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
 	process* proc = (process*)vec_get(&j->processes, idx);
@@ -152,12 +149,12 @@ job* jl_get_job_by_pid(pid_t pid) {
 }
 
 job* jl_get_job_by_id(size_t id) {
-  return (job*)map_get(&jobs->jobs, &id);
+  return (job*)map_get(&jobs.jobs, &id);
 }
 
 process* jl_get_proc(pid_t pid) {
-    for (int i = 0; i < jobs->next; ++i) {
-    job* j = (job*)map_get(&jobs->jobs, &i);
+    for (int i = 0; i < jobs.next; ++i) {
+    job* j = (job*)map_get(&jobs.jobs, &i);
     if (j) {
       for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
 	process* proc = (process*)vec_get(&j->processes, idx);
@@ -169,7 +166,7 @@ process* jl_get_proc(pid_t pid) {
 }
 
 bool jl_has_job(size_t id) {
-  return map_get(&jobs->jobs, &id) != NULL;
+  return map_get(&jobs.jobs, &id) != NULL;
 }
 
 void jl_update_state(pid_t pid, procstate state) {
@@ -180,7 +177,7 @@ void jl_update_state(pid_t pid, procstate state) {
     switch(proc->state) {
     case STOPPED:
       j->fg = false;
-      jobs->foreground = NULL;
+      jobs.foreground = NULL;
       break;
     default: break;
     }
@@ -196,34 +193,34 @@ procstate jl_get_sate(pid_t pid) {
 }
 
 void jl_print() {
-  for (int i = 0; i < jobs->next; ++i) {
-    job* j = (job*)map_get(&jobs->jobs, &i);
+  for (int i = 0; i < jobs.next; ++i) {
+    job* j = (job*)map_get(&jobs.jobs, &i);
     if (j) job_print(j);
   }
 }
 
 void jl_remove_job(size_t id) {
   job* j = jl_get_job_by_id(id);
-  if (j == jobs->foreground) jobs->foreground = NULL;
+  if (j == jobs.foreground) jobs.foreground = NULL;
   if (j) {
     el_update_exprs(j->id, j->exit_status);
-    map_remove(&jobs->jobs, &j->id);
+    map_remove(&jobs.jobs, &j->id);
   }
 }
 
 bool jl_has_fg() {
-  return jobs->foreground != NULL;
+  return jobs.foreground != NULL;
 }
 
 pid_t jl_fg_gpid() {
-  return jobs->foreground ? job_get_gpid(jobs->foreground) : 0;
+  return jobs.foreground ? job_get_gpid(jobs.foreground) : 0;
 }
 
 bool jl_resume_first_stopped() {
-  if (jobs->foreground) jobs->foreground->fg = false;
-  jobs->foreground = NULL;
-  for (int i = 0; i < jobs->next; ++i) {
-    job* j = (job*)map_get(&jobs->jobs, &i);
+  if (jobs.foreground) jobs.foreground->fg = false;
+  jobs.foreground = NULL;
+  for (int i = 0; i < jobs.next; ++i) {
+    job* j = (job*)map_get(&jobs.jobs, &i);
     if (j && job_is_stopped(j)) {
       return jl_resume(j, true);
     }

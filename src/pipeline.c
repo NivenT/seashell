@@ -204,8 +204,8 @@ int num_cmds(const pipeline* pipe) {
 void free_pipeline(pipeline* pipe) {
   if (!pipe) return;
   free_vec(&pipe->cmds);
-  if (pipe->infile) free(pipe->infile);
-  if (pipe->outfile) free(pipe->outfile);
+  free(pipe->infile);
+  free(pipe->outfile);
 }
 
 void print_pipeline(pipeline* pipe) {

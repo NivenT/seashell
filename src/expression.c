@@ -153,6 +153,8 @@ expression* el_new_expr(vec* tkns) {
   return (expression*)vec_back(&el.exprs);
 }
 
+extern void regain_terminal_control(const pid_t seashell_pid);
+
 void el_update_exprs(size_t id, int stat) {
   job* j = jl_get_job_by_id(id);
   if (!j) return;
@@ -164,6 +166,7 @@ void el_update_exprs(size_t id, int stat) {
     if (j->id == expr->head_id) {
       if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
 	advance_expression(expr);
+	if (expr->fg) regain_terminal_control(getpid());
 	execute_expression(expr);
       } else {
 	el.fg = el.fg && !expr->fg;

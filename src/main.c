@@ -63,7 +63,7 @@ static void wait_for_fg() {
   unblock_sig2(SIGCHLD, SIGUSR1, prevmask);
 }
 
-static void regain_terminal_control(const pid_t seashell_pid) {
+void regain_terminal_control(const pid_t seashell_pid) {
   sigset_t prevmask = block_sig(SIGTTOU);
   if (tcsetpgrp(STDIN_FILENO, seashell_pid) != 0) {
     printf("Error: Could not regain control of the terminal\n");
