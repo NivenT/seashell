@@ -97,7 +97,6 @@ void job_print(job* j) {
 
 bool finish_job_prep(job* j) {
   if (job_is_terminated(j)) {
-    printf("Immediately finishing job %p with id %ld\n", j, j->id);
     jl_remove_job(j->id);
     return true;
   } else if (j->fg) {
@@ -174,8 +173,6 @@ bool jl_has_job(size_t id) {
 }
 
 void jl_update_state(pid_t pid, procstate state) {
-  printf("Updating pid %d to state %s\n", pid, procstate_to_string(state));
-  
   job* j = jl_get_job_by_pid(pid);
   process* proc = jl_get_proc(pid);
   if (j && proc) {

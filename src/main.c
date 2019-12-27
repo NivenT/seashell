@@ -83,7 +83,6 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
   } else return;
 
   if (!error) {
-    printf("In main: el fg = %d and jl fg = %d\n", el_has_fg(), jl_has_fg());
     wait_for_fg();
     regain_terminal_control(seashell_pid);
   } else {

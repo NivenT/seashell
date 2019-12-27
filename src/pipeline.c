@@ -185,7 +185,6 @@ bool execute_pipeline(expression* e, pipeline* p, job* j) {
       }
     }
     if (idx == -1) {
-      printf("Adding process with pid %d to job with id %ld\n", pid, j->id);
       job_add_process(j, pid, RUNNING, command_to_string(cmd));
       if (setpgid(pid, job_get_gpid(j)) != 0) {
 	sprintf(error_msg, "setpgid error: %s", strerror(errno));

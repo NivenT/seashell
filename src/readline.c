@@ -17,13 +17,13 @@
 #define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
 #define CHECK_HINT(succ, hint, buf) if (!succ) { succ = hint(buf, color, bold); }
 
-static const int red = 31;
-static const int green = 32;
-static const int yellow = 33;
-static const int blue = 34;
-static const int magenta = 35;
-static const int cyan = 36;
-static const int white = 37;
+static const int red __attribute__((unused)) = 31;
+static const int green __attribute__((unused)) = 32;
+static const int yellow __attribute__((unused)) = 33;
+static const int blue __attribute__((unused)) = 34;
+static const int magenta __attribute__((unused)) = 35;
+static const int cyan __attribute__((unused)) = 36;
+static const int white __attribute__((unused)) = 37;
 
 char* history_file = NULL;
 char* full_buf = NULL;

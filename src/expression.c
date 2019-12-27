@@ -87,15 +87,9 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
   job* j = jl_new_job(fg);
   root->head_id = j->id;
 
-  printf("Executing pipeline \"");
-  print_pipeline(node->lhs);
-  printf("\"\n");
-  
   if (!execute_pipeline(root, node->lhs, j)) return false;
   if (!finish_job_prep(j)) return false;
-  printf("Began execution of expression with head_id %ld\n", root->head_id);
   el.fg = fg && jl_has_job(root->head_id) && !job_is_terminated(j);
-  printf("el.fg = %d\n", el.fg);
   return true;
 }
 
@@ -114,6 +108,7 @@ static void free_expression_node(expression_node* node) {
 void free_expression(expression* expr) {
   if (!expr) return;
   free_expression_node(expr->head);
+  free(expr->head);
 }
 
 static void print_expression_node(expression_node* node) {
@@ -159,15 +154,11 @@ expression* el_new_expr(vec* tkns) {
 }
 
 void el_update_exprs(size_t id, int stat) {
-  printf("Trying to update expressions\n");
-  
   job* j = jl_get_job_by_id(id);
-  printf("Found job %p\n", j);
   if (!j) return;
 
-  printf("Here %ld\n", id);
-  for (int i = 0; i < el.exprs.size; ++i) {
-    expression* expr = (expression*)vec_get(&el.exprs, i);
+  for (void* it = vec_first(&el.exprs); it; it = vec_next(&el.exprs, it)) {
+    expression* expr = (expression*)it;
     expression_node* node = expr->head;
     
     if (j->id == expr->head_id) {
@@ -175,15 +166,12 @@ void el_update_exprs(size_t id, int stat) {
 	advance_expression(expr);
 	execute_expression(expr);
       } else {
-	printf("Finished expression: %d -> ", el.fg);
 	el.fg = el.fg && !expr->fg;
-	printf("%d\n", el.fg);
 
-	*expr = *(expression*)vec_back(&el.exprs);
+        swap(it, vec_back(&el.exprs), sizeof(expression));
 	vec_pop(&el.exprs);
       }
       break;
     }
   }
-  printf("Done\n");
 }

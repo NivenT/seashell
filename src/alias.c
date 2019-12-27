@@ -13,11 +13,6 @@ static void free_alias(void* data) {
   if (*strs) free(*strs);
 }
 
-// Should I check for null strings?
-static int alias_diff(char* strs[2]) {
-  return strlen(strs[1]) - strlen(strs[0]);
-}
-
 static void cleanup() {
   free_vec(&aliases);
 }

@@ -168,3 +168,10 @@ void closeall(int fds[], int nfds) {
     if (fds[j] >= 0) close(fds[j]);
   }
 }
+
+void swap(void* addr1, void* addr2, size_t size) {
+  char storage[size];
+  memcpy(storage, addr1, size);
+  memcpy(addr1, addr2, size);
+  memcpy(addr2, storage, size);
+}

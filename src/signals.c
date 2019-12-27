@@ -13,7 +13,6 @@ static void handleSIGCHLD(int sig) {
     pid_t pid = waitpid(-1, &status, WNOHANG | WCONTINUED | WUNTRACED);
     if (pid <= 0) return;
 
-    printf("SIGCHLD caught pid %d\n", pid);
     sigset_t prevmask = block_sig(SIGCHLD); // Is this necessary?
     if (WIFEXITED(status)) {
       jl_set_exit_status(pid, WEXITSTATUS(status));

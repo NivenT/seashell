@@ -29,4 +29,6 @@ extern void closeall(int fds[], int nfds);
 
 extern int nxtpwr2(int x);
 
+extern void swap(void* addr1, void* addr2, size_t size);
+
 #endif // UTILS_H_INCLUDED
