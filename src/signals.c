@@ -6,7 +6,6 @@
 
 #include "signals.h"
 #include "job.h"
-#include "expression.h"
 
 static void handleSIGCHLD(int sig) {
   int status;
@@ -14,9 +13,9 @@ static void handleSIGCHLD(int sig) {
     pid_t pid = waitpid(-1, &status, WNOHANG | WCONTINUED | WUNTRACED);
     if (pid <= 0) return;
 
+    printf("SIGCHLD caught pid %d\n", pid);
     sigset_t prevmask = block_sig(SIGCHLD); // Is this necessary?
     if (WIFEXITED(status)) {
-      el_update_exprs(pid, WEXITSTATUS(status));
       jl_set_exit_status(pid, WEXITSTATUS(status));
       jl_update_state(pid, TERMINATED);
     } else if (WIFSTOPPED(status)) {

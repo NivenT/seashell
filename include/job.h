@@ -27,16 +27,12 @@ struct job {
   };
   vec processes;
   bool fg;
-  // file descriptor to write exit status to
-  int stat_fd;
+  int exit_status;
 };
 
 struct joblist {
   size_t next;
   map jobs; // map from job id (int) to job
-  // TODO: Come up with a more memeory efficient way to keep track of exit statuses
-  //       long enough for them to be useful.
-  map exit_statuses; // map from job id (int) to exit_status (int)
   job* foreground;
 };
 
@@ -69,6 +65,5 @@ extern bool jl_resume(job* j, bool fg);
 extern bool jl_has_job(size_t id);
 extern void jl_set_exit_status(pid_t pid, int status);
 extern int jl_get_exit_status(size_t id);
-extern bool jl_has_exit_status(size_t id);
 
 #endif // JOB_H_INCLUDED

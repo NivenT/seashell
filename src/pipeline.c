@@ -152,7 +152,6 @@ bool execute_pipeline(expression* e, pipeline* p, job* j) {
     }
   }
 
-  char* argv[MAX_NUM_ARGS + 2];
   for (size_t i = 0; i < ncmds; i++) {
     command cmd = *(command*)vec_get(&p->cmds, i);
 
@@ -178,18 +177,20 @@ bool execute_pipeline(expression* e, pipeline* p, job* j) {
 	  closeall(fds, nfds);
 	  return false;
 	}
-	handle_builtin(e, cmd, idx, infd, outfd);
+	bool succ = handle_builtin(e, cmd, idx, infd, outfd);
 	pid = getpid();
+
+	job_add_process(j, pid, TERMINATED, command_to_string(cmd));
+	jl_set_exit_status(pid, succ);
       }
     }
     if (idx == -1) {
+      printf("Adding process with pid %d to job with id %ld\n", pid, j->id);
       job_add_process(j, pid, RUNNING, command_to_string(cmd));
       if (setpgid(pid, job_get_gpid(j)) != 0) {
 	sprintf(error_msg, "setpgid error: %s", strerror(errno));
 	return false;
       }
-    } else {
-      job_add_process(j, pid, TERMINATED, command_to_string(cmd));
     }
   }
 

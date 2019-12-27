@@ -40,6 +40,6 @@ extern void free_expression(expression* expr);
 
 extern bool el_has_fg();
 extern expression* el_new_expr(vec* tkns);
-extern void el_update_exprs(pid_t pid, int exit_status);
+extern void el_update_exprs(size_t id, int exit_status);
 
 #endif // EXPRESSION_H_INCLUDED

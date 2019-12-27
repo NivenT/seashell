@@ -85,48 +85,18 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
   }
 
   job* j = jl_new_job(fg);
+  root->head_id = j->id;
+
+  printf("Executing pipeline \"");
+  print_pipeline(node->lhs);
+  printf("\"\n");
+  
   if (!execute_pipeline(root, node->lhs, j)) return false;
   if (!finish_job_prep(j)) return false;
-  root->head_id = j->id;
+  printf("Began execution of expression with head_id %ld\n", root->head_id);
+  el.fg = fg && jl_has_job(root->head_id) && !job_is_terminated(j);
+  printf("el.fg = %d\n", el.fg);
   return true;
-  
-  /*
-  pid_t root_pid = getpid();
-  
-  int fds[2];
-  if (pipe(fds) < 0) {
-    strcpy(error_msg, "Could not set up pipe");
-    return false;
-  }
-
-  job* j = jl_new_job(fg);
-  if (node->type != LEAF) j->stat_fd = fds[1];
-  else close(fds[1]);
-
-  if (node->type != LEAF && fork() == 0) {
-    char status[MAX_NUM_LEN];
-    int ret = read(fds[0], status, MAX_NUM_LEN);
-    closeall(fds, 2);
-    if (ret == -1) {
-      strcpy(error_msg, "Could not read error status");
-      if (fg) kill(root_pid, SIGUSR1);
-      return false;
-    }
-    int stat = atoi(status);
-    if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
-      execute_expression_node(root, node->rhs, fg);
-    }
-    if (fg) kill(root_pid, SIGUSR1);
-    exit(0);
-  } else {
-    close(fds[0]);
-    if (!execute_pipeline(root, node->lhs, j)) return false;
-    if (!finish_job_prep(j)) return false;
-    if (node->type == LEAF) return true;
-    expr_in_fg = fg;
-  }
-  return true;
-  */
 }
 
 bool execute_expression(expression* expr) {
@@ -188,9 +158,14 @@ expression* el_new_expr(vec* tkns) {
   return (expression*)vec_back(&el.exprs);
 }
 
-void el_update_exprs(pid_t pid, int stat) {
-  job* j = jl_get_job_by_pid(pid);
+void el_update_exprs(size_t id, int stat) {
+  printf("Trying to update expressions\n");
+  
+  job* j = jl_get_job_by_id(id);
+  printf("Found job %p\n", j);
   if (!j) return;
+
+  printf("Here %ld\n", id);
   for (int i = 0; i < el.exprs.size; ++i) {
     expression* expr = (expression*)vec_get(&el.exprs, i);
     expression_node* node = expr->head;
@@ -200,7 +175,9 @@ void el_update_exprs(pid_t pid, int stat) {
 	advance_expression(expr);
 	execute_expression(expr);
       } else {
+	printf("Finished expression: %d -> ", el.fg);
 	el.fg = el.fg && !expr->fg;
+	printf("%d\n", el.fg);
 
 	*expr = *(expression*)vec_back(&el.exprs);
 	vec_pop(&el.exprs);
@@ -208,4 +185,5 @@ void el_update_exprs(pid_t pid, int stat) {
       break;
     }
   }
+  printf("Done\n");
 }
