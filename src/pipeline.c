@@ -12,7 +12,6 @@
 #include "parser.h"
 #include "builtins.h"
 #include "utils.h"
-#include "expression.h"
 
 static bool skip_token(token* tkn) {
   return tkn->type == COMMENT || ((tkn->type == SYMBOL || tkn->type == STRING) && tkn->str.len == 0);
@@ -140,7 +139,7 @@ static bool connect_pipe(pipeline* p, int fds[], int i) {
   return true;
 }
 
-bool execute_pipeline(expression* e, pipeline* p, job* j) {
+bool execute_pipeline(pipeline* p, job* j) {
   const size_t ncmds = num_cmds(p);
   const size_t nfds = (ncmds - 1) << 1;
   int fds[nfds]; // I'm surprised this is legal
@@ -177,7 +176,7 @@ bool execute_pipeline(expression* e, pipeline* p, job* j) {
 	  closeall(fds, nfds);
 	  return false;
 	}
-	bool succ = handle_builtin(e, cmd, idx, infd, outfd);
+	bool succ = handle_builtin(cmd, idx, infd, outfd);
 	pid = getpid();
 
 	job_add_process(j, pid, TERMINATED, command_to_string(cmd));

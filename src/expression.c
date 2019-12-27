@@ -13,7 +13,7 @@
 exprlist el;
 
 static void free_expr(void* addr) {
-  free_expression(*(expression**)addr);
+  free_expression((expression*)addr);
 }
 
 static void cleanup() {
@@ -78,23 +78,20 @@ bool build_expression(vec* tkns, expression* expr) {
   return build_expression_node(tkns, expr->head);
 }
 
-static bool execute_expression_node(expression* root, expression_node* node, bool fg) {
-  if (!node) {
+bool execute_expression(expression* expr) {
+  if (!expr || !expr->head) {
     strcpy(error_msg, "Tried executing a NULL expression");
     return false;
   }
+  expression_node* node = expr->head;
 
-  job* j = jl_new_job(fg);
-  root->head_id = j->id;
+  job* j = jl_new_job(expr->fg);
+  expr->head_id = j->id;
 
-  if (!execute_pipeline(root, node->lhs, j)) return false;
+  if (!execute_pipeline(node->lhs, j)) return false;
   if (!finish_job_prep(j)) return false;
-  el.fg = fg && jl_has_job(root->head_id) && !job_is_terminated(j);
+  el.fg = expr->fg && jl_has_job(expr->head_id) && !job_is_terminated(j);
   return true;
-}
-
-bool execute_expression(expression* expr) {
-  return execute_expression_node(expr, expr->head, expr->fg);
 }
 
 static void free_expression_node(expression_node* node) {
@@ -154,7 +151,6 @@ expression* el_new_expr(vec* tkns) {
 }
 
 extern void regain_terminal_control(const pid_t seashell_pid);
-
 void el_update_exprs(size_t id, int stat) {
   job* j = jl_get_job_by_id(id);
   if (!j) return;
