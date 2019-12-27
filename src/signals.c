@@ -6,8 +6,7 @@
 
 #include "signals.h"
 #include "job.h"
-
-extern bool expr_in_fg;
+#include "expression.h"
 
 static void handleSIGCHLD(int sig) {
   int status;
@@ -17,6 +16,7 @@ static void handleSIGCHLD(int sig) {
 
     sigset_t prevmask = block_sig(SIGCHLD); // Is this necessary?
     if (WIFEXITED(status)) {
+      el_update_exprs(pid, WEXITSTATUS(status));
       jl_set_exit_status(pid, WEXITSTATUS(status));
       jl_update_state(pid, TERMINATED);
     } else if (WIFSTOPPED(status)) {
@@ -50,10 +50,6 @@ static void handleSIGTSTP(int sig) {
   unblock_sig(SIGCHLD, prevmask);
 }
 
-static void handleSIGUSR1(int sig) {
-  expr_in_fg = false;
-}
-
 // I've never used a function pointer without a typedef before, and I see why
 static bool install_signal_handler(int signum, void (*sighandler)(int)) {
   struct sigaction action;
@@ -68,7 +64,6 @@ bool install_signal_handlers() {
   ret = ret && install_signal_handler(SIGCHLD, handleSIGCHLD);
   ret = ret && install_signal_handler(SIGINT, handleSIGINT);
   ret = ret && install_signal_handler(SIGTSTP, handleSIGTSTP);
-  ret = ret && install_signal_handler(SIGUSR1, handleSIGUSR1);
   return ret;
 }
 

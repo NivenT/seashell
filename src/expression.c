@@ -10,7 +10,23 @@
 #include "job.h"
 #include "utils.h"
 
-bool expr_in_fg = false;
+exprlist el;
+
+static void free_expr(void* addr) {
+  free_expression(*(expression**)addr);
+}
+
+static void cleanup() {
+  el.fg = false;
+  free_vec(&el.exprs);
+}
+
+void init_expressions() {
+  el.fg = false;
+  el.exprs = vec_new(sizeof(expression), 0, free_expr);
+
+  atexit(cleanup);
+}
 
 static bool build_expression_node(vec* tkns, expression_node* node) {
   node->lhs = NULL;
@@ -58,7 +74,8 @@ bool build_expression(vec* tkns, expression* expr) {
     expr->fg = false;
     vec_pop(tkns);
   }
-  return build_expression_node(tkns, &expr->head);
+  expr->head = malloc(sizeof(*expr->head));
+  return build_expression_node(tkns, expr->head);
 }
 
 static bool execute_expression_node(expression* root, expression_node* node, bool fg) {
@@ -66,6 +83,14 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
     strcpy(error_msg, "Tried executing a NULL expression");
     return false;
   }
+
+  job* j = jl_new_job(fg);
+  if (!execute_pipeline(root, node->lhs, j)) return false;
+  if (!finish_job_prep(j)) return false;
+  root->head_id = j->id;
+  return true;
+  
+  /*
   pid_t root_pid = getpid();
   
   int fds[2];
@@ -77,7 +102,7 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
   job* j = jl_new_job(fg);
   if (node->type != LEAF) j->stat_fd = fds[1];
   else close(fds[1]);
-  
+
   if (node->type != LEAF && fork() == 0) {
     char status[MAX_NUM_LEN];
     int ret = read(fds[0], status, MAX_NUM_LEN);
@@ -100,36 +125,12 @@ static bool execute_expression_node(expression* root, expression_node* node, boo
     if (node->type == LEAF) return true;
     expr_in_fg = fg;
   }
-  /*
-  if (!execute_pipeline(root, node->lhs, j)) return false;
-  if (!finish_job_prep(j)) return false;
-  if (node->type == LEAF) return true;
-  expr_in_fg = fg;
-  
-  pid_t pid = fork();
-  job_set_owner(j, pid); // This line only matters to parent
-  if (pid == 0) {
-    raise(SIGSTOP);
-    if (jl_has_exit_status(id)) {
-      int stat = jl_get_exit_status(id);
-      if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
-	execute_expression_node(root, node->rhs, fg);
-      }
-    } else {
-      //sprintf(error_msg, "waitpid errored: %s", strerror(errno));
-      strcpy(error_msg, "Something went wrong, but I don't know what");
-      if (fg) kill(root_pid, SIGUSR1);
-      return false;
-    } 
-    if (fg) kill(root_pid, SIGUSR1);
-    exit(0);
-  }
-  */
   return true;
+  */
 }
 
 bool execute_expression(expression* expr) {
-  return execute_expression_node(expr, &expr->head, expr->fg);
+  return execute_expression_node(expr, expr->head, expr->fg);
 }
 
 static void free_expression_node(expression_node* node) {
@@ -142,7 +143,7 @@ static void free_expression_node(expression_node* node) {
 
 void free_expression(expression* expr) {
   if (!expr) return;
-  free_expression_node(&expr->head);
+  free_expression_node(expr->head);
 }
 
 static void print_expression_node(expression_node* node) {
@@ -163,10 +164,48 @@ static void print_expression_node(expression_node* node) {
   }
 }
 
-// This function is trash
 void print_expression(expression* expr) {
   if (!expr) return;
   printf("(%s ", expr->fg ? "FG" : "BG");
-  print_expression_node(&expr->head);
+  print_expression_node(expr->head);
   printf(")");
+}
+
+static void advance_expression(expression* expr) {
+  if (!expr || !expr->head) return;
+  free_pipeline(expr->head->lhs);
+  expr->head = expr->head->rhs;
+}
+
+bool el_has_fg() {
+  return el.fg;
+}
+
+expression* el_new_expr(vec* tkns) {
+  expression expr = { .head_id = 0 };
+  if (!build_expression(tkns, &expr)) return NULL;
+  vec_push(&el.exprs, &expr);
+  return (expression*)vec_back(&el.exprs);
+}
+
+void el_update_exprs(pid_t pid, int stat) {
+  job* j = jl_get_job_by_pid(pid);
+  if (!j) return;
+  for (int i = 0; i < el.exprs.size; ++i) {
+    expression* expr = (expression*)vec_get(&el.exprs, i);
+    expression_node* node = expr->head;
+    
+    if (j->id == expr->head_id) {
+      if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
+	advance_expression(expr);
+	execute_expression(expr);
+      } else {
+	el.fg = el.fg && !expr->fg;
+
+	*expr = *(expression*)vec_back(&el.exprs);
+	vec_pop(&el.exprs);
+      }
+      break;
+    }
+  }
 }
