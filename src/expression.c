@@ -136,7 +136,10 @@ void print_expression(expression* expr) {
 static void advance_expression(expression* expr) {
   if (!expr || !expr->head) return;
   free_pipeline(expr->head->lhs);
+
+  void* temp = expr->head;
   expr->head = expr->head->rhs;
+  free(temp);
 }
 
 bool el_has_fg() {
