@@ -131,6 +131,7 @@ void print_tokens(const token* tkns, int num) {
     case COMMENT: printf("COMMENT(%s) ", tkns[i].str.cstr); break;
     case AND: printf("AND "); break;
     case OR: printf("OR "); break;
+    case EOI: printf("EOI "); break;
     }
   }
 }

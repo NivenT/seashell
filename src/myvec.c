@@ -45,7 +45,9 @@ void vec_push(vec* v, void* elem) {
 }
 
 void vec_pop(vec* v) {
-  v->size = v->size == 0 ? v->size : v->size - 1;
+  if (v->size == 0) return;
+  --v->size;
+  if (v->f) v->f(v->data + v->size * v->elemsz);
 }
 
 void* vec_get(const vec* v, int n) {

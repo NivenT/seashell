@@ -148,7 +148,10 @@ bool el_has_fg() {
 
 expression* el_new_expr(vec* tkns) {
   expression expr = { .head_id = 0 };
-  if (!build_expression(tkns, &expr)) return NULL;
+  if (!build_expression(tkns, &expr)) {
+    free_expression(&expr);
+    return NULL;
+  }
   vec_push(&el.exprs, &expr);
   return (expression*)vec_back(&el.exprs);
 }
@@ -169,7 +172,7 @@ void el_update_exprs(size_t id, int stat) {
 	execute_expression(expr);
       } else {
 	el.fg = el.fg && !expr->fg;
-
+	
         swap(it, vec_back(&el.exprs), sizeof(expression));
 	vec_pop(&el.exprs);
       }
