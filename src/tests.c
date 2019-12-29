@@ -56,14 +56,20 @@ static void test_replace_all() {
     };
   for (int i = 0; tests[i] && (tests[i][0] || tests[i][1] || tests[i][2]); i++) {
     char* new = replace_all(tests[i][0], tests[i][1], tests[i][2]);
-    //printf("replace_all(%s, %s, %s) = %s\n", tests[i][0], tests[i][1], tests[i][2], new);
     assert(new == tests[i][3] || strcmp(new, tests[i][3]) == 0);
     if (new) free(new);
   }
 }
 
+static void test_embedded_file() {
+  char contents[] = "EMBED_FILE_HERE";
+  printf("%s\n", contents);
+  assert(strcmp(contents, "Test \"Passed\"\n!") == 0);
+}
+
 void run_tests() {
   test_map();
   test_replace_all();
+  test_embedded_file();
   exit(0);
 }

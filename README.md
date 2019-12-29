@@ -11,6 +11,7 @@ It has plenty of the features one would expect, such as
 * Background processes (e.g. `sleep 100 &`)
 * The ability to stop (by pressing `CTRL+Z`) and continue (`%`) processes 
 * Comments (e.g. `ls # this is a comment`)
+* Compound commands (e.g. `make && ./seashell`)
 
 See the bottom of this README for more information.
 
