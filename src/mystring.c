@@ -4,11 +4,12 @@
 #include "mystring.h"
 
 string string_new(char* str) {
-  string ret;
-  
-  ret.len = str ? strlen(str) : 0;
-  ret.cap = str ? ret.len << 2 : 0;
-  ret.cstr = NULL;
+  string ret = { .len = 0, .cap = 0, .cstr = NULL };
+
+  if (str) {
+    ret.len = strlen(str);
+    ret.cap = ret.len << 2;
+  }
   if (ret.cap > 0) {
     ret.cstr = malloc(ret.cap);
     strcpy(ret.cstr, str);
@@ -65,8 +66,7 @@ int string_find(const string* str, int start, const char* s) {
 }
 
 void free_string(string* str) {
-  if (str) {
-    if (str->cstr) free(str->cstr);
-    str->len = str->cap = 0;
-  }
+  if (!str) return;
+  free(str->cstr);
+  str->len = str->cap = 0;
 }

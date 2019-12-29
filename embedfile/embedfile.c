@@ -27,10 +27,8 @@ string readfile(const char* path) {
   if (fd < 0) return ret;
 
   char block[BLK_SIZE];
-  ssize_t bytes;
-  while (bytes = read(fd, block, BLK_SIZE)) {
-    string_appendn(&ret, block, bytes);
-  }
+  for (ssize_t bytes; (bytes = read(fd, block, BLK_SIZE)) > 0; string_appendn(&ret, block, bytes));
+  
   return ret;
 }
 

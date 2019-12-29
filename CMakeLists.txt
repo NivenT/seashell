@@ -44,7 +44,7 @@ add_custom_command(
   COMMAND pwd
   COMMAND rm -rf ../src
   COMMAND mv ../src2 ../src
-  COMMENT "Restoring source files"
+  COMMENT "Restoring source files now that seashell has been built"
   VERBATIM
   )
 add_custom_target(
