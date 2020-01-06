@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "utils.h"
 
@@ -177,12 +180,14 @@ void swap(void* addr1, void* addr2, size_t size) {
 }
 
 string readfile(const char* path) {
+  static const int BLK_SIZE = 128;
+
   string ret = string_new(NULL);
   
   int fd = open(path, O_RDONLY, 0644);
   if (fd < 0) return ret;
 
-  char block[128];
+  char block[BLK_SIZE];
   // This is needlessly opaque
   for (ssize_t bytes; (bytes = read(fd, block, BLK_SIZE)) > 0; string_appendn(&ret, block, bytes));  
   return ret;
