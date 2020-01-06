@@ -33,7 +33,7 @@ string readfile(const char* path) {
 }
 
 void writefile(const char* path, const string* text) {
-  int fd = open(path, O_WRONLY | O_CREAT, DEF_FILE_MODE);
+  int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, DEF_FILE_MODE);
   if (fd < 0) return;
   for (int pos = 0, num; (num = write(fd, text->cstr + pos, text->len - pos)) > 0; pos += num);
 }
@@ -47,6 +47,7 @@ void replace_all(string* str, const char* old, const char* new) {
 }
 
 void ceeify(string* str) {
+  replace_all(str, "\\", "\\\\");
   replace_all(str, "\r\n", "\\n");
   replace_all(str, "\n", "\\n");
   replace_all(str, "\"", "\\\"");

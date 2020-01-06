@@ -25,6 +25,8 @@ static const int magenta __attribute__((unused)) = 35;
 static const int cyan __attribute__((unused)) = 36;
 static const int white __attribute__((unused)) = 37;
 
+static char common_completions[] = "EMBED_COMMON_COMPLETIONS_HERE";
+
 char* history_file = NULL;
 char* full_buf = NULL;
 const char* post_cursor = NULL;
@@ -115,7 +117,7 @@ COMPLETION_FUNC(commands) {
 }
 
 // TODO: Make this code not trash
-static void complete_template(linenoiseCompletions* lc, const char* template, const char* tinp,
+static void complete_template(linenoiseCompletions* lc, const char* template, char* tinp,
 			      int ilen) {
   char* cmd = strdup(template);
   int clen = strlen(cmd);
@@ -158,57 +160,20 @@ static void complete_template(linenoiseCompletions* lc, const char* template, co
 }
 
 COMPLETION_FUNC(common) {
-  // Should these be stored in an external .seashell_completions file?
-  static const char* common_cmds[] =
-    {
-     "apt install",
-     "apt-get install",
-     "sudo apt-get install",
-     "sudo apt install",
-     "sudo apt-get remove",
-     "apt-cache search",
-     "brew install",
-     "cargo build --release",
-     "cargo run --release",
-     "curl -sSL -X POST -H \"Content-Type: application/x-www-form-urlencoded\"",
-     "curl -sSL -X GET -H \"Content-Type: application/json\"",
-     "git push origin master",
-     "git push --set-upstream origin",
-     "git remote add origin",
-     "git remote get-url",
-     "git remote set-url",
-     "git remote rename",
-     "git remote remove",
-     "git commit -m",
-     "git pull",
-     "git clone https://github.com/",
-     "git clone git@github.com:",
-     "git rebase -i",
-     "git stash",
-     "git diff --stat",
-     "git status",
-     "git add",
-     "git grep",
-     "git checkout -b",
-     "git branch -D",
-     "git ls-files",
-     "git diff",
-     "git stash",
-     "git merge",
-     "git submodule update --recursive --init",
-     "git submodule add",
-     "git fetch",
-     "bundle exec jekyll liveserve",
-     NULL
-    };
-
-  
   char* inp = strdup(buf);
   char* tinp = trim(inp);
-
   int ilen = strlen(tinp);
-  for (int i = 0; common_cmds[i]; ++i) {
-    complete_template(lc, common_cmds[i], tinp, ilen);
+
+  const string common = {.cstr = common_completions,
+			 .len = sizeof(common_completions),
+			 .cap = sizeof(common_completions)};
+  int start = 0;
+  for(int pos = string_find(&common, 0, "\n"); pos != -1; pos = string_find(&common, start, "\n")) {
+    char command[MAX_CMD_LEN];
+    strncpy(command, common.cstr + start, pos - start);
+    command[pos - start] = '\0';
+    complete_template(lc, command, tinp, ilen);
+    start = pos + 1;
   }
   free(inp);
 }

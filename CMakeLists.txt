@@ -10,9 +10,10 @@ add_executable(embedfile embedfile/embedfile.c src/mystring.c)
 target_include_directories(embedfile PUBLIC include)
 
 add_custom_command(
-  OUTPUT tests.c
+  OUTPUT tests.c readline.c
   COMMAND embedfile ../test.txt ../src/tests.c.in EMBED_FILE_HERE tests.c
-  DEPENDS embedfile ${CMAKE_CURRENT_SOURCE_DIR}/src/tests.c.in
+  COMMAND embedfile ../default_files/.seashell_completions ../src/readline.c.in EMBED_COMMON_COMPLETIONS_HERE readline.c
+  DEPENDS embedfile ${CMAKE_CURRENT_SOURCE_DIR}/src/tests.c.in ${CMAKE_CURRENT_SOURCE_DIR}/src/readline.c.in
   COMMENT "Embedding files within the code"
   VERBATIM
   )
@@ -28,6 +29,7 @@ file(GLOB SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.c)
 add_executable(seashell
   ${SRCS}
   ${CMAKE_CURRENT_BINARY_DIR}/tests.c
+  ${CMAKE_CURRENT_BINARY_DIR}/readline.c
 )
 target_link_libraries(seashell linenoise ${CURL_LIBRARIES})
 target_include_directories(seashell PUBLIC include linenoise/ ${CURL_INCLUDE_DIRS})
