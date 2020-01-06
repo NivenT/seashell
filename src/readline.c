@@ -29,14 +29,6 @@ char* history_file = NULL;
 char* full_buf = NULL;
 const char* post_cursor = NULL;
 
-/*
-static void add_completion_helper(linenoiseCompletions* lc, const char* complete) {
-  char* safe_space = replace_all(complete, " ", "\\ ");
-  linenoiseAddCompletion(lc, safe_space);
-  free(safe_space);
-}
-*/
-
 static void add_completion(linenoiseCompletions* lc, const char* complete) {
   char* comp = concat(complete, post_cursor);
   if (full_buf && *full_buf) {
@@ -122,6 +114,49 @@ COMPLETION_FUNC(commands) {
   free(paths);
 }
 
+// TODO: Make this code not trash
+static void complete_template(linenoiseCompletions* lc, const char* template, const char* tinp,
+			      int ilen) {
+  char* cmd = strdup(template);
+  int clen = strlen(cmd);
+    
+  int coffset = 0;
+  int ioffset = 0;
+  while (ioffset < ilen && coffset < clen) {
+    char* cword = first_word(cmd + coffset);
+    char* iword = first_word(tinp + ioffset);
+
+    int iwlen = strlen(iword);
+    int iclen = strlen(cword);
+      
+    if (strcmp(cword, iword) != 0) {
+      if (ioffset + iwlen == ilen && starts_with(cword, iword)) {
+	char* temp = concat(tinp, cword + iwlen);
+	add_completion(lc, temp);
+	free(temp);
+      } else {
+	free(cword);
+	free(iword);
+	break;
+      }
+    }
+
+    coffset += iclen + 1;
+    ioffset += iwlen;
+      
+    free(cword);
+    free(iword);
+
+    iword = tinp + ioffset;
+    while (*iword && isspace(*iword)) {
+      ++iword;
+      ++ioffset;
+    }
+  }
+    
+  free(cmd);
+}
+
 COMPLETION_FUNC(common) {
   // Should these be stored in an external .seashell_completions file?
   static const char* common_cmds[] =
@@ -167,50 +202,13 @@ COMPLETION_FUNC(common) {
      NULL
     };
 
-  // TODO: Make this code not trash
+  
   char* inp = strdup(buf);
   char* tinp = trim(inp);
 
   int ilen = strlen(tinp);
   for (int i = 0; common_cmds[i]; ++i) {
-    char* cmd = strdup(common_cmds[i]);
-    int clen = strlen(cmd);
-    
-    int coffset = 0;
-    int ioffset = 0;
-    while (ioffset < ilen && coffset < clen) {
-      char* cword = first_word(cmd + coffset);
-      char* iword = first_word(tinp + ioffset);
-
-      int iwlen = strlen(iword);
-      int iclen = strlen(cword);
-      
-      if (strcmp(cword, iword) != 0) {
-	if (ioffset + iwlen == ilen && starts_with(cword, iword)) {
-	  char* temp = concat(tinp, cword + iwlen);
-	  add_completion(lc, temp);
-	  free(temp);
-	} else {
-	  free(cword);
-	  free(iword);
-	  break;
-	}
-      }
-
-      coffset += iclen + 1;
-      ioffset += iwlen;
-      
-      free(cword);
-      free(iword);
-
-      iword = tinp + ioffset;
-      while (*iword && isspace(*iword)) {
-	++iword;
-	++ioffset;
-      }
-    }
-    
-    free(cmd);
+    complete_template(lc, common_cmds[i], tinp, ilen);
   }
   free(inp);
 }

@@ -175,3 +175,16 @@ void swap(void* addr1, void* addr2, size_t size) {
   memcpy(addr1, addr2, size);
   memcpy(addr2, storage, size);
 }
+
+string readfile(const char* path) {
+  string ret = string_new(NULL);
+  
+  int fd = open(path, O_RDONLY, 0644);
+  if (fd < 0) return ret;
+
+  char block[128];
+  // This is needlessly opaque
+  for (ssize_t bytes; (bytes = read(fd, block, BLK_SIZE)) > 0; string_appendn(&ret, block, bytes));  
+  return ret;
+}
+

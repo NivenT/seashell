@@ -94,7 +94,7 @@ void run_line(char line[MAX_CMD_LEN], const pid_t seashell_pid, bool error) {
 int main(int argc, char *argv[]) {
   const pid_t seashell_pid = getpid();
 
-  run_tests();
+  //run_tests();
   
   init_globals();
   run_rc_file(seashell_pid);

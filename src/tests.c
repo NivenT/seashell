@@ -62,7 +62,7 @@ static void test_replace_all() {
 }
 
 static void test_embedded_file() {
-  char contents[] = "EMBED_FILE_HERE";
+  char contents[] = "Test \"Passed\"\n!\n";
   assert(strcmp(contents, "Test \"Passed\"\n!\n") == 0);
 }
 
