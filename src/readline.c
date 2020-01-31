@@ -13,7 +13,6 @@
 #include "apt_repos.h"
 #include "networking.h"
 
-#define COMPLETION_FUNC(type) static void complete_##type(const char* buf, linenoiseCompletions *lc)
 #define HINTS_FUNC(type) static char* type##_hints(const char* buf, int* color, int* bold) 
 #define CHECK_HINT(succ, hint, buf) if (!succ) { succ = hint(buf, color, bold); }
 
@@ -25,199 +24,7 @@ static const int magenta __attribute__((unused)) = 35;
 static const int cyan __attribute__((unused)) = 36;
 static const int white __attribute__((unused)) = 37;
 
-static char common_completions[] = "EMBED_COMMON_COMPLETIONS_HERE";
-
 char* history_file = NULL;
-char* full_buf = NULL;
-const char* post_cursor = NULL;
-
-static void add_completion(linenoiseCompletions* lc, const char* complete) {
-  char* comp = concat(complete, post_cursor);
-  if (full_buf && *full_buf) {
-    const char* strs[] = {full_buf, "| ", comp, NULL};
-    char* full = concat_many(strs);
-    linenoiseAddCompletion(lc, full);
-    free(full);
-  } else {
-    linenoiseAddCompletion(lc, comp);
-  }
-  free(comp);
-}
-
-COMPLETION_FUNC(filenames) {
-  const char* word = last_word(buf);
-
-  char* fldr;
-  const char* file = rsplit(word, "/", &fldr);
-  if (strlen(file) < COMPLETION_MIN_LEN) return;
-  
-  if (fldr && *fldr == '~') {
-    if (fldr[1] == '\0' || fldr[1] == '/') {
-      char* temp = concat(home_dir, fldr + 1);
-      free(fldr);
-      fldr = temp;
-    }
-  }
-
-  DIR* dir = opendir(!fldr ? "."  :
-		     !*fldr ? "/" : fldr);
-  if (dir) {
-    struct dirent* d;
-    while ((d = readdir(dir)) != NULL) {
-      if (strcmp(d->d_name, ".")*strcmp(d->d_name, "..") == 0) continue;
-      if (starts_with(d->d_name, file)) {
-	char* safe = replace_all(d->d_name + strlen(file), " ", "\\ ");
-	char* full = concat(buf, safe);
-	add_completion(lc, full);
-	free(full);
-	free(safe);
-      }
-    }
-    closedir(dir);
-  }
-  if (fldr) free(fldr);
-}
-
-COMPLETION_FUNC(builtins) {
-  if (strlen(buf) < COMPLETION_MIN_LEN) return;
-  for (int i = 0; builtins[i]; i++) {
-    if (starts_with(builtins[i], buf)) add_completion(lc, builtins[i]);
-  }
-}
-
-COMPLETION_FUNC(commands) {
-  if (strstr(buf, " ")) return;
-  if (strlen(buf) < COMPLETION_MIN_LEN) return;
-  
-  char* paths = getenv("PATH");
-  if (!paths) paths = "/bin:/usr/bin";
-
-  paths = strdup(paths); // make a copy since strsep modifies stuff
-  char* iter = paths;
-  for (char* path = strsep(&iter, ":"); path; path = strsep(&iter, ":")) {
-    DIR* dir = opendir(path);
-    if (dir) {
-      struct dirent* d;
-      while ((d = readdir(dir)) != NULL) {
-	if (starts_with(d->d_name, buf)) {
-	  const char* strs[] = {path, "/", d->d_name, NULL};
-	  char* full_path = concat_many(strs);
-
-	  struct stat s;
-	  if (stat(full_path, &s) == 0 && (s.st_mode & S_IXUSR)) {
-	    add_completion(lc, d->d_name);
-	  }
-	  free(full_path);
-	}
-      }
-      closedir(dir);
-    }
-  }
-  free(paths);
-}
-
-// TODO: Make this code not trash
-static void complete_template(linenoiseCompletions* lc, const char* template, char* tinp,
-			      int ilen) {
-  char* cmd = strdup(template);
-  int clen = strlen(cmd);
-    
-  int coffset = 0;
-  int ioffset = 0;
-  while (ioffset < ilen && coffset < clen) {
-    char* cword = first_word(cmd + coffset);
-    char* iword = first_word(tinp + ioffset);
-
-    int iwlen = strlen(iword);
-    int iclen = strlen(cword);
-      
-    if (strcmp(cword, iword) != 0) {
-      if (ioffset + iwlen == ilen && starts_with(cword, iword)) {
-	char* temp = concat(tinp, cword + iwlen);
-	add_completion(lc, temp);
-	free(temp);
-      } else {
-	free(cword);
-	free(iword);
-	break;
-      }
-    }
-
-    coffset += iclen + 1;
-    ioffset += iwlen;
-      
-    free(cword);
-    free(iword);
-
-    iword = tinp + ioffset;
-    while (*iword && isspace(*iword)) {
-      ++iword;
-      ++ioffset;
-    }
-  }
-    
-  free(cmd);
-}
-
-COMPLETION_FUNC(common) {
-  char* inp = strdup(buf);
-  char* tinp = trim(inp);
-  int ilen = strlen(tinp);
-
-  const string common = {.cstr = common_completions,
-			 .len = sizeof(common_completions),
-			 .cap = sizeof(common_completions)};
-  int start = 0;
-  for(int pos = string_find(&common, 0, "\n"); pos != -1; pos = string_find(&common, start, "\n")) {
-    char command[MAX_CMD_LEN];
-    strncpy(command, common.cstr + start, pos - start);
-    command[pos - start] = '\0';
-    complete_template(lc, command, tinp, ilen);
-    start = pos + 1;
-  }
-  free(inp);
-}
-
-COMPLETION_FUNC(apt_install) {
-  static const char* cmds[] = {"sudo apt install", "apt install", "sudo apt-get install",
-			       "apt-get install", NULL};
-  if (!starts_with_any(buf, cmds)) return;
-  const char* word = last_word(buf);
-  int len = strlen(word);
-  if (!word || len < COMPLETION_MIN_LEN) return;
-  const vec* apts = apts_starting_with(*word);
-  for (void* it = vec_first(apts); it; it = vec_next(apts, it)) {
-    char* apt = *(char**)it;
-    if (starts_with(apt, word)) {
-      char* full = concat(buf, apt + len);
-      add_completion(lc, full);
-      free(full);
-    }
-  }
-}
-
-COMPLETION_FUNC(git_clone) {
-  if (!starts_with(buf, "git clone https://github.com/")) return;
-  const char* post_host = buf + 29;
-  if (!strstr(post_host, "/") || strstr(post_host, " ")) return;
-
-  char* user;
-  const char* word = rsplit(post_host, "/", &user);
-  if (!word || !*word) {
-    if (user) free(user);
-    return;
-  }
-  vec* repos = get_repos(to_lower(user));
-  for (void* it = vec_first(repos); it; it = vec_next(repos, it)) {
-    char* repo = *(char**)it;
-    if (starts_with(repo, word)) {
-      char* full = concat(buf, repo + strlen(word));
-      add_completion(lc, full);
-      free(full);
-    }
-  }
-  free(user);
-}
 
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
@@ -331,27 +138,6 @@ HINTS_FUNC(history) {
   return ret;
 }
 
-static void completion(const char* buf, linenoiseCompletions *lc) {
-  if (!buf) return;
-
-  char* beg = strndup(buf, lc->cursor - buf);
-  post_cursor = lc->cursor;
-  
-  const char* post_pipe = rsplit(beg, "|", &full_buf);
-  while (*post_pipe && isspace(*post_pipe)) ++post_pipe;
-  
-  // Order matters (higher priority stuff first)
-  complete_apt_install(post_pipe, lc);
-  complete_git_clone(post_pipe, lc);
-  complete_common(post_pipe, lc);
-  complete_builtins(post_pipe, lc);
-  complete_commands(post_pipe, lc);
-  complete_filenames(post_pipe, lc);
-  
-  free(full_buf);
-  free(beg);
-}
-
 static char* hints(const char* buf, int* color, int* bold) {
   if (!buf) return NULL;
   const char* post_pipe = rsplit(buf, "|", NULL);
@@ -371,6 +157,7 @@ static void cleanup() {
   free(history_file);
 }
 
+// TODO: Separate out hints/completions code into their own (2 new) files
 void init_linenoise() {
   linenoiseSetMultiLine(1);
 
@@ -383,6 +170,8 @@ void init_linenoise() {
 
   linenoiseHistorySetMaxLen(LINENOISE_HISTORY_MAX_LEN);
   linenoiseHistoryLoad(history_file);
+
+  init_completions();
 }
 
 bool read_line(char* line) {
