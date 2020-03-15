@@ -58,9 +58,9 @@ static void init_globals() {
 }
 
 static void wait_for_fg() {
-  sigset_t prevmask = block_sig2(SIGCHLD, SIGUSR1);
+  sigset_t prevmask = block_sig(SIGCHLD);
   while (jl_has_fg() || el_has_fg()) sigsuspend(&prevmask);
-  unblock_sig2(SIGCHLD, SIGUSR1, prevmask);
+  unblock_sig(SIGCHLD, prevmask);
 }
 
 void regain_terminal_control(const pid_t seashell_pid) {
