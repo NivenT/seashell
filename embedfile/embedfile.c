@@ -16,7 +16,7 @@ void print_usage(const char* name) {
   printf("%s TEXT_FILE SOURCE_FILE SENTINEL DEST_FILE\n", name);
   printf("\n");
   printf("example:\n");
-  printf("%s data.txt code.c FILE_GOES_HERE modified_code.c\n", name);
+  printf("%s data.txt code.c.in FILE_GOES_HERE modified_code.c\n", name);
   exit(1);
 }
 

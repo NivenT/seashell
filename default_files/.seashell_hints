@@ -1,0 +1,23 @@
+grep |->  <file> <pattern>
+ls |->  <path>
+rm |->  [<files...> | -r <folders...>]
+git commit |->  -m <message>
+git clone |->  <repository>
+git submodule add |->  <repository>
+git merge |->  <branch>
+git diff -- |-> stat
+bookmark --save |->  <path> --name <name>
+bookmark --goto |->  <name>
+cat |->  <file>
+tar |->  [-cf (compress) | -tvf (list) | -xf (extract)]
+tar -cf |->  <archive> <files...>
+tar -tvf |->  <archive>
+tar -xf |->  <archive>
+emacs -nw |->  <file>
+ssh |->  <user>@<destination>
+xargs |->  <command>
+ps |->  aux
+curl |->  -sSL -X <method> -H <header> -d <data> -D <response header file> <url>
+curl -sSL |->  -X <method> -H <header> -d <data> -D <response header file> <url>
+curl -sSL -X POST |->  -H \Content-Type: application/x-www-form-urlencoded\ -d <data> -D <response header file> <url>
+curl -sSL -X GET |->  -H \Content-Type: application/json\ -D <response header file> <url>
