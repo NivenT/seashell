@@ -250,5 +250,6 @@ void init_completions() {
     return;
   }
   common_completions = readfile(completion_file);
+  free(completion_file);
   atexit(cleanup);
 }

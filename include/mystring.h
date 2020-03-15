@@ -15,6 +15,7 @@ extern void string_grow(string* str, int new_capacity);
 extern void string_push(string* str, char c);
 extern void string_append(string* str, const char* s);
 extern void string_appendn(string* str, const char* s, int n);
+extern void string_insert(string* str, int pos, const char* s);
 extern void string_replace(string* str, int pos, int len, const char* replacement);
 extern int string_find(const string* str, int start, const char* s);
 extern void free_string(string* str);

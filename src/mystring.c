@@ -46,6 +46,10 @@ void string_appendn(string* str, const char* s, int n) {
   str->len += n;
 }
 
+void string_insert(string* str, int pos, const char* s) {
+  string_replace(str, pos, 0, s);
+}
+
 void string_replace(string* str, int pos, int len, const char* s) {
   if (!s || str->len < pos + len) return;
   int slen = strlen(s);

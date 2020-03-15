@@ -26,6 +26,9 @@ static const int magenta __attribute__((unused)) = 35;
 static const int cyan __attribute__((unused)) = 36;
 static const int white __attribute__((unused)) = 37;
 
+// map user input -> hint
+static map command_hints;
+
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
@@ -46,47 +49,12 @@ HINTS_FUNC(builtins) {
 }
 
 HINTS_FUNC(commands) {
-  // Should these be stored in an external .seashell_hints file and have regex support?
-  static char* const hints[][2] =
-    {
-     {"grep", " <file> <pattern>"},
-     {"ls", " <path>"},
-     {"rm", " [<files...> | -r <folders...>]"},
-     {"git commit", " -m <message>"},
-     {"git clone", " <repository>"},
-     {"git submodule add", " <repository>"},
-     {"git merge", " <branch>"},
-     {"git diff --", "stat"},
-     {"bookmark --save", " <path> --name <name>"},
-     {"bookmark --goto", " <name>"},
-     {"cat", " <file>"},
-     {"tar", " [-cf (compress) | -tvf (list) | -xf (extract)]"},
-     {"tar -cf", " <archive> <files...>"},
-     {"tar -tvf", " <archive>"},
-     {"tar -xf", " <archive>"},
-     {"emacs -nw", " <file>"},
-     {"ssh", " <user>@<destination>"},
-     {"xargs", " <command>"},
-     {"ps", " aux"},
-     {"curl", " -sSL -X <method> -H <header> -d <data> -D <response header file> <url>"},
-     {"curl -sSL", " -X <method> -H <header> -d <data> -D <response header file> <url>"},
-     {"curl -sSL -X POST", " -H \"Content-Type: application/x-www-form-urlencoded\" -d <data> -D <response header file> <url>"},
-     {"curl -sSL -X GET", " -H \"Content-Type: application/json\" -D <response header file> <url>"},
-     NULL
-    };
-  
   char* copy = strdup(buf);
   char* trimmed = trim(copy);
 
-  char* ret = NULL;
-  for (int i = 0; hints[i][0] || hints[i][1]; i++) {
-    if (strcmp(trimmed, hints[i][0]) == 0) {
-      ret = hints[i][1];
-      break;
-    }
-  }
+  char** retptr = (char**)map_get(&command_hints, &trimmed);
   free(copy);
-  return ret;
+  return retptr ? *retptr : NULL;
 }
 
 static int comp_str(const void* lhs, const void* rhs) {
@@ -153,6 +121,23 @@ char* hints(const char* buf, int* color, int* bold) {
   return ret;
 }
 
+// TODO: Make the following 3 functions not duplicated between here and networking.c
+static size_t hash_char_star(void* data) {
+  char* str = *(char**)data;
+  size_t hash = 7;
+  while(str && *str) hash = hash*31 + *(str++);
+  return hash;
+}
+
+static bool char_star_eq(void* lhs, void* rhs) {
+  return strcmp(*(char**)lhs, *(char**)rhs) == 0;
+}
+
+static void clean_char_star(void* addr) {
+  free(*(char**)addr);
+}
+
+
 static bool create_hints_file(const char* path) {
   static const char default_command_hints[] = "EMBED_COMMAND_HINTS_HERE";
   int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0644);
@@ -162,8 +147,46 @@ static bool create_hints_file(const char* path) {
   return succ;
 }
 
+static void populate_command_hints(const string* contents) {
+  int start = 0;
+  for(int pos = string_find(contents, 0, "\n"); pos != -1; pos = string_find(contents, start, "\n")) {
+    char line[2*MAX_CMD_LEN + 5]; // cmd |-> cmd2
+    strncpy(line, contents->cstr + start, pos - start);
+    line[pos - start] = '\0';
+
+    char* user;
+    char* after = (char*)rsplit(line, "|->", &user);
+
+    // I feel like I'm doing C string manipulation wrong
+    char* tuser = strdup(trim(user));
+    string hint = string_new(trim(after));
+    string_insert(&hint, 0, " ");
+
+    map_insert(&command_hints, &tuser, &hint.cstr);
+    
+    free(user);
+    start = pos + 1;
+  }
+}
+
 static void cleanup() {
+  free_map(&command_hints);
 }
 
 void init_hints() {
+  command_hints = map_new(sizeof(char*), sizeof(char*), 0, hash_char_star, char_star_eq,
+			  clean_char_star, clean_char_star);
+
+  const char* temp_strs[] = {home_dir, "/", HINTS_COMMON_FILE, NULL};
+  char* hints_file = concat_many(temp_strs);
+  if (access(hints_file, F_OK) == -1 && !create_hints_file(hints_file)) {
+    free(hints_file);
+    return;
+  }
+  string contents = readfile(hints_file);
+  free(hints_file);
+  populate_command_hints(&contents);
+  free_string(&contents);
+  
+  atexit(cleanup);
 }

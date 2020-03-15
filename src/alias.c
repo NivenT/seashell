@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "alias.h"
 
-vec aliases;
+static vec aliases;
 
 static void free_alias(void* data) {
   char** strs = (char**)data;
