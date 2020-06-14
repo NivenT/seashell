@@ -13,9 +13,10 @@
 #include "utils.h"
 #include "signals.h"
 #include "job.h"
+#include "jumper.h"
 
 const char* builtins[] = {"exit", "quit", "cd", "bookmark", "home", "alias", "jobs", "%", "kill",
-			  "history", "fg", "bg", NULL};
+                          "history", "fg", "bg", "jumper", NULL};
 static char prev_dir[MAX_PTH_LEN] = {0};
 
 static bool cd(const command cmd) {
@@ -230,6 +231,7 @@ bool handle_builtin(command cmd, int idx, int infd, int outfd) {
   case 8: ret = mykill(cmd, outfd); break;
   case 9: ret = history(cmd, outfd); break;
   case 10: case 11: ret = fbg(cmd, idx == 10, outfd); break;
+  case 12: ret = play_game(command_to_string(cmd)); break;
   }
   sigprocmask(SIG_SETMASK, &prev, NULL);
   

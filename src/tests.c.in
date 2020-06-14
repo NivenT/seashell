@@ -70,5 +70,6 @@ void run_tests() {
   test_map();
   test_replace_all();
   test_embedded_file();
+  printf("Tests passed\n");
   exit(0);
 }

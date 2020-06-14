@@ -167,14 +167,14 @@ void el_update_exprs(size_t id, int stat) {
     
     if (j->id == expr->head_id) {
       if ((stat == 0 && node->type == ALL) || (stat != 0 && node->type == ANY)) {
-	advance_expression(expr);
-	if (expr->fg) regain_terminal_control(getpid());
-	execute_expression(expr);
+        advance_expression(expr);
+        if (expr->fg) regain_terminal_control(getpid());
+        execute_expression(expr);
       } else {
-	el.fg = el.fg && !expr->fg;
+        el.fg = el.fg && !expr->fg;
 	
         swap(it, vec_back(&el.exprs), sizeof(expression));
-	vec_pop(&el.exprs);
+        vec_pop(&el.exprs);
       }
       break;
     }

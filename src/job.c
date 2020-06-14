@@ -134,14 +134,14 @@ job* jl_new_job(bool fg) {
 }
 
 // TODO: Use map_first, map_next (not just in this function, but in any function where
-//                                "for (int i = 0; i < jobs.next; ++i)" appears")
+//                                "for (int i = 0; i < jobs.next; ++i)" appears)
 job* jl_get_job_by_pid(pid_t pid) {
   for (int i = 0; i < jobs.next; ++i) {
     job* j = (job*)map_get(&jobs.jobs, &i);
     if (j) {
       for (int idx = 0; idx < vec_size(&j->processes); ++idx) {
-	process* proc = (process*)vec_get(&j->processes, idx);
-	if (proc->pid == pid) return j;
+        process* proc = (process*)vec_get(&j->processes, idx);
+        if (proc->pid == pid) return j;
       }
     }
   }
@@ -150,6 +150,10 @@ job* jl_get_job_by_pid(pid_t pid) {
 
 job* jl_get_job_by_id(size_t id) {
   return (job*)map_get(&jobs.jobs, &id);
+}
+
+job* jl_get_foreground() {
+  return jobs.foreground;
 }
 
 process* jl_get_proc(pid_t pid) {

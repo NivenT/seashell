@@ -160,34 +160,34 @@ bool execute_pipeline(pipeline* p, job* j) {
     if (!is_builtin(cmd.name, &idx)) pid = fork();
     if (pid == 0) {
       if (idx == -1) {
-	bool could_connect = connect_pipe(p, fds, i);
-	closeall(fds, nfds);
-	if (!could_connect) return false;
+        bool could_connect = connect_pipe(p, fds, i);
+        closeall(fds, nfds);
+        if (!could_connect) return false;
         execvp(cmd.name, (char**)&cmd);
-	sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
-	return false;
+        sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
+        return false;
       } else {
-	int infd = i > 0 ? fds[(i-1) << 1] :
-	           p->infile ? open(p->infile, O_RDONLY) : STDIN_FILENO;
-	int outfd = i + 1 < ncmds ? fds[1 + (i<<1)] :
-	            p->outfile ? creat(p->outfile, 0644) : STDOUT_FILENO;
-	if (infd < 0 || outfd < 0) {
-	  strcpy(error_msg, "Could not setup file descriptors for builtin");
-	  closeall(fds, nfds);
-	  return false;
-	}
-	bool succ = handle_builtin(cmd, idx, infd, outfd);
-	pid = getpid();
+        int infd = i > 0 ? fds[(i-1) << 1] :
+          p->infile ? open(p->infile, O_RDONLY) : STDIN_FILENO;
+        int outfd = i + 1 < ncmds ? fds[1 + (i<<1)] :
+          p->outfile ? creat(p->outfile, 0644) : STDOUT_FILENO;
+        if (infd < 0 || outfd < 0) {
+          strcpy(error_msg, "Could not setup file descriptors for builtin");
+          closeall(fds, nfds);
+          return false;
+        }
+        bool succ = handle_builtin(cmd, idx, infd, outfd);
+        pid = getpid();
 
-	job_add_process(j, pid, TERMINATED, command_to_string(cmd));
-	jl_set_exit_status(pid, succ);
+        job_add_process(j, pid, TERMINATED, command_to_string(cmd));
+        jl_set_exit_status(pid, succ);
       }
     }
     if (idx == -1) {
       job_add_process(j, pid, RUNNING, command_to_string(cmd));
       if (setpgid(pid, job_get_gpid(j)) != 0) {
-	sprintf(error_msg, "setpgid error: %s", strerror(errno));
-	return false;
+        sprintf(error_msg, "setpgid error: %s", strerror(errno));
+        return false;
       }
     }
   }

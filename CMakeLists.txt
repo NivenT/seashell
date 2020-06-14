@@ -32,6 +32,7 @@ add_executable(seashell
   ${CMAKE_CURRENT_BINARY_DIR}/tests.c
   ${CMAKE_CURRENT_BINARY_DIR}/completions.c
   ${CMAKE_CURRENT_BINARY_DIR}/hints.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/shhhhhhhhh/jumper.c
 )
 target_link_libraries(seashell linenoise ${CURL_LIBRARIES})
-target_include_directories(seashell PUBLIC include linenoise/ ${CURL_INCLUDE_DIRS})
+target_include_directories(seashell PUBLIC include shhhhhhhhh linenoise ${CURL_INCLUDE_DIRS})

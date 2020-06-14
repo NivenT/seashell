@@ -3,8 +3,8 @@
 
 #include "defs.h"
 
-void init_networking();
-string http_simple_get(const char* url);
-vec* get_repos(char* user);
+extern void init_networking();
+extern string http_simple_get(const char* url);
+extern vec* get_repos(char* user);
 
 #endif // NETWORKING_H_INCLUDED

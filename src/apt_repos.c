@@ -40,22 +40,22 @@ void init_apts() {
     if (f) {
       char line[MAX_CMD_LEN];
       while (fgets(line, MAX_CMD_LEN, f)) {
-	char* apt = first_word(line);
-	if (!apt) continue;
-	if (!*apt) {
-	  free(apt);
-	  continue;
-	}
+        char* apt = first_word(line);
+        if (!apt) continue;
+        if (!*apt) {
+          free(apt);
+          continue;
+        }
 	
-	char c = *apt;
-	if (map_contains(&apts, &c)) {
-	  vec* v = (vec*)map_get(&apts, &c);
-	  vec_push(v, &apt);
-	} else {
-	  vec v = vec_new(sizeof(char*), 1024, clean_str);
-	  vec_push(&v, &apt);
-	  map_insert(&apts, &c, &v);
-	}	
+        char c = *apt;
+        if (map_contains(&apts, &c)) {
+          vec* v = (vec*)map_get(&apts, &c);
+          vec_push(v, &apt);
+        } else {
+          vec v = vec_new(sizeof(char*), 1024, clean_str);
+          vec_push(&v, &apt);
+          map_insert(&apts, &c, &v);
+        }	
       }
       fclose(f);
     }
@@ -69,22 +69,23 @@ const vec* apts_starting_with(char c) {
   return (vec*)map_get(&apts, &c);
 }
 
+// Is this used anywhere for anything?
 vec apts_starting_with_sp(const char* prefix) {
   vec v = vec_new(sizeof(char*), 0, clean_str);
 
   subprocess sp;
   if (spawn_subprocess(&sp, (command){ .name = "apt-cache", .args = { "search", ".", NULL } },
-		       false, true)) {
+                       false, true)) {
     FILE* f = fdopen(sp.outfd, "r");
     if (f) {
       char line[MAX_CMD_LEN];
       while (fgets(line, MAX_CMD_LEN, f)) {
-	char* apt = first_word(line);
-	if (starts_with(apt, prefix)) {
-	  vec_push(&v, &apt);
-	} else {
-	  free(apt);
-	}
+        char* apt = first_word(line);
+        if (starts_with(apt, prefix)) {
+          vec_push(&v, &apt);
+        } else {
+          free(apt);
+        }
       }
       fclose(f);
     }

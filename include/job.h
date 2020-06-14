@@ -53,6 +53,7 @@ extern bool finish_job_prep(job* j);
 extern job* jl_new_job(bool fg);
 extern job* jl_get_job_by_pid(pid_t pid);
 extern job* jl_get_job_by_id(size_t id);
+extern job* jl_get_foreground();
 extern process* jl_get_proc(pid_t pid);
 extern void jl_update_state(pid_t pid, procstate state);
 extern procstate jl_get_state(pid_t pid);
