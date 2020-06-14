@@ -36,3 +36,4 @@ git submodule update --recursive --init
 git submodule add
 git fetch
 bundle exec jekyll liveserve
+bundle exec jekyll serve

@@ -21,3 +21,4 @@ curl |-> -sSL -X <method> -H <header> -d <data> -D <response header file> <url>
 curl -sSL |-> -X <method> -H <header> -d <data> -D <response header file> <url>
 curl -sSL -X POST |-> -H \Content-Type: application/x-www-form-urlencoded\ -d <data> -D <response header file> <url>
 curl -sSL -X GET |-> -H \Content-Type: application/json\ -D <response header file> <url>
+objdump |-> -dCM intel <program>
