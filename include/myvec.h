@@ -22,6 +22,7 @@ extern void free_vec(vec* v);
 extern int vec_size(const vec* v);
 extern void vec_push(vec* v, void* elem);
 extern void vec_pop(vec* v);
+extern void vec_resize(vec* v, int new_size);
 extern void* vec_get(const vec* v, int n);
 extern void* vec_front(const vec* v);
 extern void* vec_back(const vec* v);

@@ -37,17 +37,22 @@ int vec_size(const vec* v) {
 }
 
 void vec_push(vec* v, void* elem) {
-  if (v->size >= v->cap) {
-    v->cap <<= 1;
-    v->data = realloc(v->data, v->cap * v->elemsz);
-  }
-  memcpy(vec_get(v, v->size++), elem, v->elemsz);
+  vec_resize(v, v->size + 1);
+  memcpy(vec_back(v), elem, v->elemsz);
 }
 
 void vec_pop(vec* v) {
   if (v->size == 0) return;
   --v->size;
   if (v->f) v->f(v->data + v->size * v->elemsz);
+}
+
+void vec_resize(vec* v, int new_size) {
+  if (new_size >= v->cap) {
+    while (new_size >= v->cap) v->cap *= 2;
+    v->data = realloc(v->data, v->cap * v->elemsz);
+  }
+  v->size = new_size;
 }
 
 void* vec_get(const vec* v, int n) {

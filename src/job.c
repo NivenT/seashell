@@ -1,4 +1,3 @@
-#include <sys/mman.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -92,7 +91,6 @@ void job_print(job* j) {
   }
 }
 
-#include <sys/wait.h>
 bool finish_job_prep(job* j) {
   if (job_is_terminated(j)) {
     jl_remove_job(j->id);
