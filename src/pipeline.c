@@ -47,52 +47,52 @@ bool build_pipeline(vec* tkns, pipeline* pipe) {
     } else if (tkn->type == SYMBOL || tkn->type == STRING) {
       switch(mode) {
       case CMD:
-	if (tkn->type == SYMBOL) {
-	  curr.name = tkn->str.cstr;
-	} else {
-	  strcpy(error_msg, "Each part of the pipeline must begin with a command");
-	  return false;
-	}
-	mode = ARGS;
-	break;
+        if (tkn->type == SYMBOL) {
+          curr.name = tkn->str.cstr;
+        } else {
+          strcpy(error_msg, "Each part of the pipeline must begin with a command");
+          return false;
+        }
+        mode = ARGS;
+        break;
       case ARGS:
-	curr.args[arg++] = tkn->str.cstr;
-	if (arg >= MAX_NUM_ARGS) {
-	  strcpy(error_msg, "Exceeded the maximum number of allowed arguments in a command");
-	  return false;
-	}
-	curr.args[arg] = 0;
-	break;
+        curr.args[arg++] = tkn->str.cstr;
+        if (arg >= MAX_NUM_ARGS) {
+          strcpy(error_msg, "Exceeded the maximum number of allowed arguments in a command");
+          return false;
+        }
+        curr.args[arg] = 0;
+        break;
       case INPUTFILE:
-	pipe->infile = tkn->str.cstr;
-	mode = CMD;
-	break;
+        pipe->infile = tkn->str.cstr;
+        mode = CMD;
+        break;
       case OUTPUTFILE:
-	pipe->outfile = tkn->str.cstr;
-	mode = CMD;
-	break;
+        pipe->outfile = tkn->str.cstr;
+        mode = CMD;
+        break;
       }
     } else {
       // Should this be a switch instead?
       if (tkn->type == AMPERSAND) {
-	pipe->fg = false;
-	if (i < size - 2) {
-	  strcpy(error_msg, "The ampersand goes at the end of the command");
-	  return false;
-	}
+        pipe->fg = false;
+        if (i < size - 2) {
+          strcpy(error_msg, "The ampersand goes at the end of the command");
+          return false;
+        }
       } else if (tkn->type == INFILE) {
-	mode = INPUTFILE;
+        mode = INPUTFILE;
       } else if (tkn->type == OUTFILE) {
-	mode = OUTPUTFILE;
+        mode = OUTPUTFILE;
       } else if (tkn->type == PIPE) {
-	mode = CMD;
+        mode = CMD;
       }
 
       if (curr.name) {
-	vec_push(&pipe->cmds, &curr);
-	curr.name = NULL;
-	curr.args[0] = 0;
-	arg = 0;
+        vec_push(&pipe->cmds, &curr);
+        curr.name = NULL;
+        curr.args[0] = 0;
+        arg = 0;
       }
     }
   }
@@ -163,6 +163,7 @@ bool execute_pipeline(pipeline* p, job* j) {
         bool could_connect = connect_pipe(p, fds, i);
         closeall(fds, nfds);
         if (!could_connect) return false;
+        //raise(SIGSTOP);
         execvp(cmd.name, (char**)&cmd);
         sprintf(error_msg, "Could not run command %s: %s", cmd.name, strerror(errno));
         return false;

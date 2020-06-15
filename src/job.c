@@ -63,7 +63,7 @@ pid_t job_get_last_pid(job* j) {
   return ((process*)vec_get(&j->processes, j->processes.size-1))->pid;
 }
 
-// TODO: Consolidate the following three into one function
+// TODO: Consolidate the following two into one function
 bool job_is_stopped(job* j) {
   if (!j) return false;
   int size = vec_size(&j->processes);
@@ -92,6 +92,7 @@ void job_print(job* j) {
   }
 }
 
+#include <sys/wait.h>
 bool finish_job_prep(job* j) {
   if (job_is_terminated(j)) {
     jl_remove_job(j->id);
