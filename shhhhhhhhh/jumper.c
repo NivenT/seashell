@@ -16,6 +16,9 @@
 
 #define GROUND_HEIGHT 5
 
+#define MILLISECOND   1000
+#define HALFSECOND    (500*MILLISECOND)
+
 static struct termios orig_state;
 static vec screen;
 static int nrows, ncols;
@@ -91,15 +94,35 @@ static void add_background() {
 }
 
 static void display_screen() {
+  /**/
+  char test[5][5] =
+    {
+     {'\0', '\0', '\0', '\0', '\0'},
+     {'\0', '\0', '\0', '\0', '\0'},
+     {'\0', '@', '\0', 'P', '\0'},
+     {'T', 'T', 'T', 'T', 'T'},
+     {'T', 'T', 'T', 'T', 'T'}
+    };
+  printf("Clearing\n");
+  printf("\e[1;1H\e[2J"); // clear
+  printf("Cleared\n");
+  for (int r = 0; r < 5; r++) {
+    for (int c = 0; c < 5; c++) {
+      if (test[r][c] == '\0') continue;
+      printf("\033[%c;%cH%c", '0' + r, '0' + c, test[r][c]);
+    }
+  }
+  fflush(stdout);
+  /**
   char* screen_str = screen.data;
   printf("%s\n", screen_str);
-  /*
+  /**
   for (int r = 0; r < nrows; r++) {
     for (int c = 0; c < ncols; c++) {
       printf("%c", get_screen(r, c));
     }
   }
-  */
+  /**/
 }
 
 static void jumper() {
@@ -107,10 +130,11 @@ static void jumper() {
   atexit(cleanup);
   clear_screen();
   for (int key = 0; key != 'q' && key != EOF; key = get_key()) {
-    usleep(500);
+    usleep(50*MILLISECOND);
 
     if (key != 0) {
       printf("Screen dimensions are %d x %d\n", nrows, ncols);
+      usleep(HALFSECOND);
     }
     
     clear_screen();
