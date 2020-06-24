@@ -32,17 +32,18 @@ static map command_hints;
 HINTS_FUNC(builtins) {  
   linenoiseSetFreeHintsCallback(NULL);
   for (int i = 0; builtins[i]; i++) {
+    if (strcmp(builtins[i], "jumper") == 0) continue;
     int len = strlen(buf);
     if (len >= HINTS_MIN_LEN && strncmp(builtins[i], buf, len) == 0) {
       if (len < strlen(builtins[i])) {
-	linenoiseSetFreeHintsCallback(free);
-	return strdup(builtins[i] + len);
-      } else switch(i) {
-	case 2: return " <path>";
-	case 5: return " <orig> <new>";
-	case 8: return " --job <id> --idx <idx> <sig>";
-	case 10: case 11: return " <job_idx>";
-      }
+        linenoiseSetFreeHintsCallback(free);
+        return strdup(builtins[i] + len);
+      } else switch(i) { // This is kinda dubious
+        case 2: return " <path>";
+        case 5: return " <orig> <new>";
+        case 8: return " --job <id> --idx <idx> <sig>";
+        case 10: case 11: return " <job_idx>";
+        }
     }
   }
   return NULL;
