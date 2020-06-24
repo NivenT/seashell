@@ -15,7 +15,11 @@
 
 #define SOLID_SQUARE(c) ((Cell){ .tkn = ' ', .fcol = nocolor, .bcol = c})
 #define PLAYER_TKN   '@'
+#define PLAYER_C     (ncols/2)
 #define PLAYER_CELL(p) ((Cell){ .tkn = PLAYER_TKN, .fcol = p.col, .bcol = nocolor})
+#define PLAYER_MAX_HEIGHT 3
+
+#define PLAYER_INCLINE 0b00000001
 
 #define GROUND_HEIGHT 8
 #define GROUND_PERCENT_DIRT 0.80
@@ -23,6 +27,7 @@
 #define MILLISECOND   1000
 #define HALFSECOND    (500*MILLISECOND)
 
+typedef uint8_t flag_t;
 typedef struct Cell {
   char tkn;
   int fcol; // foreground color
@@ -43,9 +48,9 @@ static vec screen = { .cap = 0 };
 static int nrows, ncols;
 
 static struct {
-  int r, c;
+  int r;
   int col;
-  uint8_t fx;
+  flag_t state; // bitmask
 } player;
 
 static struct {
@@ -127,7 +132,7 @@ static void add_background() {
 }
 
 static void add_objects() {
-  set_screen(player.r, player.c, PLAYER_CELL(player));
+  set_screen(player.r, PLAYER_C, PLAYER_CELL(player));
 }
 
 static void clear_terminal() {
@@ -177,11 +182,44 @@ static void display_screen() {
 
 static void init_game() {
   player.r = nrows - GROUND_HEIGHT - 1;
-  player.c = 0;
   player.col = blue;
-  player.fx = 0;
+  player.state = 0;
 
   curr_colors.fcol = curr_colors.bcol = nocolor;
+}
+
+static bool player_has_flags(flag_t flags) {
+  return (player.state & flags) > 0;
+}
+
+static void player_set_flags(flag_t flags) {
+  player.state |= flags;
+}
+
+static void player_unset_flags(flag_t flags) {
+  player.state &= ~flags;
+}
+
+static bool is_player_jumping() {
+  return player.r != nrows - GROUND_HEIGHT - 1 || player_has_flags(PLAYER_INCLINE);
+}
+
+static void handle_input(int key) {
+  if (key == ' ' && !is_player_jumping()) player_set_flags(PLAYER_INCLINE);
+}
+
+static void update() {
+  if (is_player_jumping()) {
+    player.r += player_has_flags(PLAYER_INCLINE) ? -1 : 1;
+    if (nrows - GROUND_HEIGHT - 1 - player.r >= PLAYER_MAX_HEIGHT) player_unset_flags(PLAYER_INCLINE);
+  }
+}
+
+static void display() {
+  clear_screen();
+  add_background();
+  add_objects();
+  display_screen();
 }
 
 static void jumper() {
@@ -191,16 +229,15 @@ static void jumper() {
   clear_screen(); // set nrows, ncols
   init_game();
   for (int key = 0; key != 'q' && key != EOF; key = get_key()) {
+    /*
     if (key != 0) {
       printf("Screen dimensions are %d x %d\n", nrows, ncols);
       usleep(HALFSECOND);
     }
-    
-    
-    clear_screen();
-    add_background();
-    add_objects();
-    display_screen();
+    */
+    handle_input(key);
+    update();
+    display();
     usleep(100*MILLISECOND);
   }
 }
