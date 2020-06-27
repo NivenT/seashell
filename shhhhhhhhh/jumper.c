@@ -511,6 +511,7 @@ bool play_game(char* cmd_str) {
   }
   pid_t pid = fork();
   if (pid == 0) {
+    free(cmd_str);
     jumper();
     exit(0);
   } else {
