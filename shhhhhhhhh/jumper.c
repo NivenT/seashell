@@ -23,17 +23,22 @@
 #define PLAYER_C             (ncols/2)
 #define PLAYER_DEF_COL       yellow
 #define PLAYER_CELL(p)       ((cell){ .tkn = PLAYER_TKN, .fcol = p.col, .bcol = nocolor})
-#define PLAYER_MAX_HEIGHT    5
+#define PLAYER_BIG_HEIGHT    5
+#define PLAYER_SMALL_HEIGHT  3
 
-#define PLAYER_INCLINE 0b00000001
+#define PLAYER_BIG_INCLINE   0b00000001
+#define PLAYER_SMALL_INCLINE 0b00000010
+#define PLAYER_INCLINE       (PLAYER_BIG_INCLINE | PLAYER_SMALL_INCLINE)
 
-#define OBSTACLE_COL          light_grey
-#define OBSTACLE_BASE_PROB    0.01
-#define OBSTACLE_PROB_DELTA   0.005
-#define OBSTACLE_SPAWN_PROB   (OBSTACLE_BASE_PROB + OBSTACLE_PROB_DELTA * score)
-#define OBSTACLE_MAX_HEIGHT   3
-#define OBSTACLE_MAX_NUM      6
-#define OBSTACLE_MIN_GAP      5
+#define OBSTACLE_COL            light_grey
+#define OBSTACLE_BASE_PROB      0.01
+#define OBSTACLE_PROB_DELTA     0.0025
+#define OBSTACLE_SPAWN_PROB     (OBSTACLE_BASE_PROB + OBSTACLE_PROB_DELTA * score)
+#define OBSTACLE_MAX_HEIGHT     3
+#define OBSTACLE_MAX_NUM        6
+#define OBSTACLE_MIN_GAP        7
+#define OBSTACLE_MAX_DBL_HEIGHT 2
+#define OBSTACLE_DBL_PROB       0.2
 
 #define GROUND_HEIGHT       8
 #define GROUND_PERCENT_DIRT 0.70
@@ -84,6 +89,8 @@ static int obstacle_far_left = 0;
 
 static vec screen = { .cap = 0 };
 static int nrows, ncols;
+
+static bool game_over = false;
 
 static struct {
   int r;
@@ -301,14 +308,20 @@ static bool is_player_jumping() {
   return player.r != nrows - GROUND_HEIGHT - 1 || player_has_flags(PLAYER_INCLINE);
 }
 
+static bool is_jump_big() {
+  return player_has_flags(PLAYER_BIG_INCLINE);
+}
+
 static void handle_input(int key) {
-  if (key == ' ' && !is_player_jumping()) player_set_flags(PLAYER_INCLINE);
+  if (key == ' ' && !is_player_jumping()) player_set_flags(PLAYER_BIG_INCLINE);
+  if (key == 'w' && !is_player_jumping()) player_set_flags(PLAYER_SMALL_INCLINE);
 }
 
 static void update_player() {
   if (is_player_jumping()) {
     player.r += player_has_flags(PLAYER_INCLINE) ? -1 : 1;
-    if (nrows - GROUND_HEIGHT - 1 - player.r >= PLAYER_MAX_HEIGHT) player_unset_flags(PLAYER_INCLINE);
+    const int max_height = is_jump_big() ? PLAYER_BIG_HEIGHT : PLAYER_SMALL_HEIGHT;
+    if (nrows - GROUND_HEIGHT - 1 - player.r >= max_height) player_unset_flags(PLAYER_INCLINE);
   }
 }
 
@@ -329,6 +342,10 @@ static void update_obstacles() {
     obstacle_far_left = ncols-1;
     obstacle o = { .c = ncols-1, .height = randi(0, OBSTACLE_MAX_HEIGHT) + 1 };
     vec_push(&obstacles, &o);
+    if (randf(0,1) <= OBSTACLE_DBL_PROB && o.height <= OBSTACLE_MAX_DBL_HEIGHT) {
+      o.c--;
+      vec_push(&obstacles, &o);
+    }
     //debug_print("Pushed obstacle with height %d (vec size = %d)\n", o.height, vec_size(&obstacles));
   }
 }
@@ -346,6 +363,16 @@ static void display() {
   display_screen();
 }
 
+static void check_game_over() {
+  for (void* it = vec_first(&obstacles); it; it = vec_next(&obstacles, it)) {
+    obstacle* o = it;
+    if (o->c == PLAYER_C && player.r > row_above_ground() - o->height) {
+      game_over = true;
+      debug_print("Game over! Scored %d points\n", score);
+    }
+  }
+}
+
 static void jumper() {
   setup_term();
   atexit(cleanup);
@@ -353,12 +380,13 @@ static void jumper() {
   srand(time(NULL));
   clear_screen(); // set nrows, ncols
   init_game();
-  for (int key = 0; key != 'q' && key != EOF; key = get_key()) {
+  for (int key = 0; key != 'q' && key != EOF && !game_over; key = get_key()) {
     //if (key != 0) debug_print("Screen dimensions are %d x %d\n", nrows, ncols);
     
     handle_input(key);
     update();
     display();
+    check_game_over();
     usleep(100*MILLISECOND);
   }
 }
