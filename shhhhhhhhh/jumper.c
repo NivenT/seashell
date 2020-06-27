@@ -33,12 +33,19 @@
 #define OBSTACLE_COL            light_grey
 #define OBSTACLE_BASE_PROB      0.01
 #define OBSTACLE_PROB_DELTA     0.0025
-#define OBSTACLE_SPAWN_PROB     (OBSTACLE_BASE_PROB + OBSTACLE_PROB_DELTA * score)
+#define OBSTACLE_SPAWN_PROB     (OBSTACLE_BASE_PROB + OBSTACLE_PROB_DELTA * num_dodged)
 #define OBSTACLE_MAX_HEIGHT     3
 #define OBSTACLE_MAX_NUM        6
 #define OBSTACLE_MIN_GAP        7
 #define OBSTACLE_MAX_DBL_HEIGHT 2
 #define OBSTACLE_DBL_PROB       0.2
+
+#define ITEM_MAX_HEIGHT     PLAYER_SMALL_HEIGHT
+#define ITEM_CELL(type)     ((cell){ .tkn = type->tkn, .fcol = type->col, .bcol = nocolor})
+#define ITEM_SPEED_BASE     1.26 // ~2^{1/3}
+#define ITEM_COMMON_PROB    (OBSTACLE_BASE_PROB/2.0)
+#define ITEM_RARE_PROB      (ITEM_COMMON_PROB/8.0)
+#define ITEM_IN_AIR_PROB    0.2
 
 #define GROUND_HEIGHT       8
 #define GROUND_PERCENT_DIRT 0.70
@@ -46,11 +53,16 @@
 #define MIN_NUM_COLS_FOR_SCORE   12
 #define SCORE_COLOR              yellow
 
+#define MIN_NUM_COLS_FOR_LIVES   10
+#define LIVES_COLOR              yellow
+
+#define LIGHT(col) (col + 60)
+
 #define MILLISECOND   1000
 #define HALFSECOND    (500*MILLISECOND)
 
 typedef uint8_t flag_t;
-typedef uint8_t item_t;
+typedef void (*ItemEffect)(void);
 typedef struct {
   char tkn;
   int fcol; // foreground color
@@ -60,10 +72,16 @@ typedef struct {
   int c;
   int height;
 } obstacle;
+
+typedef struct {
+  char tkn;
+  int col;
+  float prob;
+  ItemEffect effect;
+} item_type;
 typedef struct {
   int r, c;
-  int col;
-  item_t type;
+  item_type* type;
 } item;
 
 
@@ -83,13 +101,18 @@ static struct termios orig_state;
 // I probably don't need any of these default values since static data is zero-initialized anyways
 // but better safe than sorry I guess
 static vec obstacles = { .cap = 0 };
-static vec items = { .cap = 0 };
-static int score = 0;
 static int obstacle_far_left = 0;
+
+static vec items = { .cap = 0 };
+static vec item_types = { .cap = 0 };
 
 static vec screen = { .cap = 0 };
 static int nrows, ncols;
 
+static int points = 0;
+static int num_dodged = 0;
+static int speed = 1;
+static int lives = 1;
 static bool game_over = false;
 
 static struct {
@@ -107,7 +130,7 @@ static void cleanup() {
   tcsetattr(STDIN_FILENO, TCSANOW, &orig_state);
   printf("\e[0m"); // reset color
 
-  vec* vecs[] = {&screen, &items, &obstacles};
+  vec* vecs[] = {&screen, &items, &item_types, &obstacles};
   for (int i = 0; i < sizeof(vecs)/sizeof(vec*); i++) {
     if (vecs[i]->cap != 0) free_vec(vecs[i]);
   }
@@ -166,7 +189,11 @@ static void debug_print(char* format, ...) {
   usleep(HALFSECOND);
 }
 
-static int row_above_ground() {
+inline static int score() {
+  return num_dodged + points;
+}
+
+inline static int row_above_ground() {
   return nrows - GROUND_HEIGHT - 1;
 }
 
@@ -215,16 +242,23 @@ static void add_background() {
 static void add_objects() {
   set_screen(player.r, PLAYER_C, PLAYER_CELL(player));
 
-  int count = 0;
   const int r = row_above_ground();
   for (void* it = vec_first(&obstacles); it; it = vec_next(&obstacles, it)) {
-    const obstacle* o = (const obstacle*)it;
+    const obstacle* o = it;
     for (int h = 0; h < o->height; h++) {
       set_screen(r - h, o->c, SOLID_SQUARE(OBSTACLE_COL));
     }
-    count++;
   }
-  //debug_print("Added %d (of %d) obstacles to the screen\n", count, obstacles.size);
+
+  for (int i = 0; i < vec_size(&items); i++) {
+    item* t = vec_get(&items, i);
+    if (get_screen(t->r, t->c).tkn == ' ') { // there's already an obstacle here
+      // This is a poor location for this code, but it avoids some complexity, so here we are
+      swap(t, vec_back(&items), sizeof(item));
+      vec_pop(&items);
+      i--;
+    } else set_screen(t->r, t->c, ITEM_CELL(t->type));
+  }
 }
 
 static void add_score() {
@@ -232,8 +266,17 @@ static void add_score() {
   if (row_above_ground() <= 0) return;
 
   char line[MAX_NUM_LEN + sizeof("score: ")];
-  sprintf(line, "score: %d", score);
+  sprintf(line, "score: %d", score());
   write_to_screen(0, 0, line, SCORE_COLOR);
+}
+
+static void add_lives() {
+  if (ncols < MIN_NUM_COLS_FOR_LIVES) return;
+  if (row_above_ground() <= 1) return;
+
+  char line[MAX_NUM_LEN + sizeof("lives: ")];
+  sprintf(line, "lives: %d", lives);
+  write_to_screen(1, 0, line, LIVES_COLOR);
 }
 
 static void clear_terminal() {
@@ -281,6 +324,11 @@ static void display_screen() {
   fflush(stdout);
 }
 
+static void speed_up() { speed++; }
+static void slow_down() { speed--; }
+static void extra_life() { lives++; }
+static void free_points() { points += 10; }
+
 static void init_game() {
   player.r = row_above_ground();
   player.col = PLAYER_DEF_COL;
@@ -289,7 +337,35 @@ static void init_game() {
   curr_colors.fcol = curr_colors.bcol = nocolor;
 
   obstacles = vec_new(sizeof(obstacle), 0, NULL);
+
+  item_type temp;
   items = vec_new(sizeof(item), 0, NULL);
+  item_types = vec_new(sizeof(item_type), 4, NULL);
+  temp = (item_type){ .tkn = '>',
+                      .col = LIGHT(green), .
+                      prob = ITEM_COMMON_PROB,
+                      .effect = speed_up
+  };
+  vec_push(&item_types, &temp);
+  temp = (item_type){ .tkn = '<',
+                      .col = LIGHT(magenta),
+                      .prob = ITEM_COMMON_PROB,
+                      .effect = slow_down
+  };
+  vec_push(&item_types, &temp);
+  temp = (item_type){ .tkn = '+',
+                      .col = LIGHT(green),
+                      .prob = ITEM_RARE_PROB,
+                      .effect = extra_life
+  };
+  vec_push(&item_types, &temp);
+  temp = (item_type){ .tkn = '!',
+                      .col = LIGHT(blue),
+                      .prob = ITEM_COMMON_PROB,
+                      .effect = free_points
+  };
+  vec_push(&item_types, &temp);
+  
 }
 
 static bool player_has_flags(flag_t flags) {
@@ -327,9 +403,9 @@ static void update_player() {
 
 static void update_obstacles() {
   for (int i = 0; i < vec_size(&obstacles); i++) {
-    obstacle* o = (obstacle*)vec_get(&obstacles, i);
+    obstacle* o = vec_get(&obstacles, i);
     if (--o->c < 0) {
-      score += o->height;
+      num_dodged += o->height;
       swap(o, vec_back(&obstacles), sizeof(obstacle));
       vec_pop(&obstacles);
       i--;
@@ -350,9 +426,38 @@ static void update_obstacles() {
   }
 }
 
+static void update_items() {
+  for (int i = 0; i < vec_size(&items); i++) {
+    item* t = vec_get(&items, i);
+    bool remove = false;
+    if (t->c == PLAYER_C && t->r == player.r) {
+      if (t->type) t->type->effect();
+      remove = true;
+    } else if (--t->c < 0) remove = true;
+    if (remove) {
+      swap(t, vec_back(&items), sizeof(item));
+      vec_pop(&items);
+      i--;
+    }
+  }
+
+  float spawn = randf(0, 1);
+  for (void* it = vec_first(&item_types); it; it = vec_next(&item_types, it)) {
+    item_type* type = it;
+    if (spawn <= type->prob) {
+      int r = row_above_ground() - randi(0, ITEM_MAX_HEIGHT) * (randf(0,1) < ITEM_IN_AIR_PROB);
+      item t = { .r = r, .c = ncols-1, .type = type };
+      vec_push(&items, &t);
+      break;
+    }
+    spawn -= type->prob;
+  }
+}
+
 static void update() {
   update_player();
   update_obstacles();
+  update_items();
 }
 
 static void display() {
@@ -360,17 +465,23 @@ static void display() {
   add_background();
   add_objects();
   add_score();
+  add_lives();
   display_screen();
 }
 
 static void check_game_over() {
   for (void* it = vec_first(&obstacles); it; it = vec_next(&obstacles, it)) {
     obstacle* o = it;
-    if (o->c == PLAYER_C && player.r > row_above_ground() - o->height) {
-      game_over = true;
-      debug_print("Game over! Scored %d points\n", score);
-    }
+    if (o->c == PLAYER_C && player.r > row_above_ground() - o->height) lives--;
   }
+  if (game_over = (lives <= 0)) debug_print("\nGame over! Scored %d points\n", score());
+}
+
+static float mypow(float base, int exp) {
+  if (exp < 0) return mypow(1.f/base, -exp);
+  if (exp == 0) return 1.f;
+  float root = mypow(base, exp/2);
+  return exp%2 == 0 ? root * root : root * root * base;
 }
 
 static void jumper() {
@@ -387,7 +498,7 @@ static void jumper() {
     update();
     display();
     check_game_over();
-    usleep(100*MILLISECOND);
+    usleep(100*MILLISECOND * mypow(ITEM_SPEED_BASE, -speed));
   }
 }
 
