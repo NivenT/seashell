@@ -68,12 +68,17 @@ void* vec_back(const vec* v) {
 }
 
 void* vec_first(const vec* v) {
-  return v ? v->data : NULL;
+  return v && v->size > 0 ? v->data : NULL;
 }
 
 void* vec_next(const vec* v, void* prev) {
   if (prev - v->data >= v->elemsz * (v->size - 1)) return NULL;
   return v && prev ? prev + v->elemsz : NULL;
+}
+
+void* vec_prev(const vec* v, void* next) {
+  if (next == v->data) return NULL;
+  return v && next ? next - v->elemsz : NULL;
 }
 
 void vec_sort(vec* v, CompareElemFn comp) {

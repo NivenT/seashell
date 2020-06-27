@@ -28,6 +28,7 @@ extern void* vec_front(const vec* v);
 extern void* vec_back(const vec* v);
 extern void* vec_first(const vec* v);
 extern void* vec_next(const vec* v, void* prev);
+extern void* vec_prev(const vec* v, void* next);
 extern void vec_sort(vec* v, CompareElemFn comp);
 
 #endif // MYVEC_H_INCLUDED
