@@ -77,7 +77,7 @@ bool goto_bookmark(const char* name) {
     return true;
   }
   char line[MAX_PTH_LEN];
-  for (int l = 1; fgets(line, MAX_CMD_LEN, f); l++) {
+  for (int l = 1; fgets(line, MAX_PTH_LEN, f); l++) {
     char* trimmed = trim(line);
     char* backup = trimmed;
     

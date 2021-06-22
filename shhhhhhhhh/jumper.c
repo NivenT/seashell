@@ -394,7 +394,8 @@ static void handle_input(int key) {
 
 static void update_player() {
   if (is_player_jumping()) {
-    player.r += player_has_flags(PLAYER_INCLINE) ? -1 : (2*(player.r <= row_above_ground())-1);
+    player.r += player_has_flags(PLAYER_INCLINE) ? -1 :
+                player.r <= row_above_ground()   ?  1 : -1;
     const int max_height = is_jump_big() ? PLAYER_BIG_HEIGHT : PLAYER_SMALL_HEIGHT;
     if (nrows - GROUND_HEIGHT - 1 - player.r >= max_height) player_unset_flags(PLAYER_INCLINE);
   }
